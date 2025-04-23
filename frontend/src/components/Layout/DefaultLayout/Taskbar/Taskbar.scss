@@ -1,0 +1,13 @@
+.taskbar_link {
+    text-decoration: none;
+    color: var(--text-color);
+    &:hover {
+        color: burlywood;
+    }
+}
+
+.taskbar-img {
+    height: 3.2rem;
+    width: 3.2rem;
+    border-radius: 50px;
+}
