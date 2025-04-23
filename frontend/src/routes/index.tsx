@@ -6,8 +6,8 @@ import Cook from '../pages/cook/Cook';
 import Ingredient from '../pages/ingredient/Ingredients';
 import Market from '../pages/market/Market';
 import AddMarketOrder from '../pages/add-market-order/AddMarketOrder';
-// import Group from '../pages/group/Group';
-// import GroupDetail from '../components/group-detail/GroupDetail';
+import Group from '../pages/group/Group';
+import GroupDetail from '../components/group-detail/GroupDetail';
 import Fridge from '../pages/fridge/Fridge';
 import AddDish from '../pages/add-dish/AddDish';
 interface RouteConfig {
@@ -23,8 +23,8 @@ const publicRoutes: RouteConfig[] = [
    { path: '/ingredients', component: Ingredient },
    { path: '/market', component: Market },
    { path: '/market/add', component: AddMarketOrder },
-//    { path: '/group', component: Group },
-//    { path: '/group/:id', component: GroupDetail },
+   { path: '/group', component: Group },
+   { path: '/group/:id', component: GroupDetail },
    { path: '/fridge', component: Fridge },
     { path: '/sign-up', component: SignUp, layout: null },
     { path: '/', component: SignIn, layout: null },

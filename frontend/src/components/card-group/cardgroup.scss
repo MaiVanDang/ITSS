@@ -1,0 +1,7 @@
+.cardgroup_member_item {
+    min-height: 4rem;
+    font-size: 1.2rem;
+    &:hover {
+        background-color: var(--background-color);
+    }
+}

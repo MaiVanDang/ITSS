@@ -95,8 +95,8 @@ create table group_member(
 id int auto_increment primary key,
 group_id int not null , 
 user_id int not null, 
-foreign key (group_id) references user(id), 
-foreign key (user_id) references group_table(id)
+foreign key (group_id) references group_table(id), 
+foreign key (user_id) references users(id)
 ); 
 create table group_shopping( 
 id int auto_increment primary key,

@@ -180,6 +180,7 @@ public class GroupService {
         FridgeEntity newFridge = new FridgeEntity ();
         newFridge.setName("Tủ lạng của " + groupDto.getName());
         newFridge.setType(1);
+        newFridge.setUserId(entity.getLeader());
         newFridge.setGroupId(entity.getId());
         fridgeRepository.save(newFridge);
     }
