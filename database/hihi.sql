@@ -111,7 +111,7 @@ id int auto_increment primary key,
 user_id int not null, 
 recipe_id int not null, 
 foreign key (user_id) references user(id), 
-foreign key (recipe_id) references dish_attribute(id)
+foreign key (recipe_id) references dish(id)
 );
 
 create table fridge (

@@ -81,55 +81,77 @@ public class ShoppingService {
         return shoppingDto;
     }
     public void addShopping(ShoppingDto shoppingDto) {
+
+        if (shoppingDto.getDishes() != null && !shoppingDto.getDishes().isEmpty()) {
+            for (int i = 0; i < shoppingDto.getDishes().size(); i++) {
+                DishAttributeDto dish = shoppingDto.getDishes().get(i);
+            }
+        }
+
+        // In thông tin nguyên liệu bổ sung
+        if (shoppingDto.getAttributes() != null && !shoppingDto.getAttributes().isEmpty()) {
+            for (int i = 0; i < shoppingDto.getAttributes().size(); i++) {
+                ShoppingAttributeDto attr = shoppingDto.getAttributes().get(i);
+            }
+        }
+
+        // Code xử lý chính
         if(shoppingRepository.findByCode(shoppingDto.getCode()) != null){
+            System.out.println("LỖI: Mã đi chợ trùng lặp - " + shoppingDto.getCode());
             throw new DuplicateException("Mã đi chợ trùng lặp");
         } else {
             ShoppingEntity entity = shoppingModelMapper.map(shoppingDto, ShoppingEntity.class);
             entity.setUserId(shoppingDto.getUser().getId());
             entity.setCreateAt(now());
             entity.setStatus(0);
+
             entity = shoppingRepository.save(entity);
-            System.out.println(entity);
+
             List<DishIngredientsEntity> dishShoppingList = new ArrayList<DishIngredientsEntity>();
+
             for(DishAttributeDto dishAttributeDto : shoppingDto.getDishes()) {
                 DishAttributeEntity dishAttribute = new DishAttributeEntity();
-                dishAttribute = shoppingModelMapper.map(dishAttributeDto,DishAttributeEntity.class);
+                dishAttribute = shoppingModelMapper.map(dishAttributeDto, DishAttributeEntity.class);
                 dishAttribute.setShoppingId(entity.getId());
                 dishAttribute.setDishId(dishAttributeDto.getDish().getId());
                 dishAttribute.setQuantity(dishAttributeDto.getQuantity());
                 dishAttribute.setCookStatus(0);
                 dishAttribute.setCreateAt(now());
+
                 dishAttributeRepository.save(dishAttribute);
+
                 List<DishIngredientsEntity> dishDto = dishIngredientsRepository.findByDishId(dishAttribute.getDishId());
                 dishShoppingList.addAll(dishDto);
-                for(DishIngredientsEntity dishShopping  : dishDto) {
-                    ShoppingAttributeEntity oldAttribute = attributeRepository.findByShoppingIdAndIngredientsIdAndMeasure(entity.getId(),dishShopping.getIngredientsId(),dishShopping.getMeasure());
+
+                for(DishIngredientsEntity dishShopping : dishDto) {
+                    ShoppingAttributeEntity oldAttribute = attributeRepository.findByShoppingIdAndIngredientsIdAndMeasure(
+                            entity.getId(), dishShopping.getIngredientsId(), dishShopping.getMeasure());
+
                     if(oldAttribute != null) {
                         oldAttribute.setQuantity((oldAttribute.getQuantity()).add(BigDecimal.valueOf(dishShopping.getQuantity())));
                         attributeRepository.save(oldAttribute);
-
                     } else {
                         ShoppingAttributeEntity attribute = new ShoppingAttributeEntity();
                         attribute.setShoppingId(entity.getId());
                         attribute.setStatus(0);
                         attribute.setUserId(entity.getUserId());
                         attribute.setIngredientsId(dishShopping.getIngredientsId());
-                        attribute.setQuantity(BigDecimal.valueOf(dishShopping.getQuantity() * dishAttribute.getQuantity()));
+                        BigDecimal newQuantity = BigDecimal.valueOf(dishShopping.getQuantity() * dishAttribute.getQuantity());
+                        attribute.setQuantity(newQuantity);
                         attribute.setMeasure(dishShopping.getMeasure());
+
                         attributeRepository.save(attribute);
                     }
-
                 }
-
             }
 
             for(ShoppingAttributeDto attributeDto : shoppingDto.getAttributes()) {
+                ShoppingAttributeEntity oldAttribute = attributeRepository.findByShoppingIdAndIngredientsIdAndMeasure(
+                        entity.getId(), attributeDto.getIngredients().getId(), attributeDto.getMeasure());
 
-                ShoppingAttributeEntity oldAttribute = attributeRepository.findByShoppingIdAndIngredientsIdAndMeasure(entity.getId(),attributeDto.getIngredients().getId(),attributeDto.getMeasure());
                 if(oldAttribute != null) {
                     oldAttribute.setQuantity(oldAttribute.getQuantity().add(attributeDto.getQuantity()));
                     attributeRepository.save(oldAttribute);
-
                 } else {
                     ShoppingAttributeEntity attribute = new ShoppingAttributeEntity();
                     attribute = shoppingModelMapper.map(attributeDto, ShoppingAttributeEntity.class);
@@ -140,6 +162,7 @@ public class ShoppingService {
                     attributeRepository.save(attribute);
                 }
             }
+
         }
     }
     public void updateShopping(ShoppingDto shoppingDto) {

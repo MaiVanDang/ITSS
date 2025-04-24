@@ -13,7 +13,7 @@ import { updateMarkets } from './MarketSlice';
 import ModalDeleteMarketOrder from '../../components/modal/ModalDeleteMarketOrder';
 import ModalDetailMarketOrder from '../../components/modal/ModalDetailMarketOrder';
 import { userInfo } from '../../utils/userInfo';
-// import ModalShareMarketOrder from '../../components/modal/ModalShareMarketOrder';
+import ModalShareMarketOrder from '../../components/modal/ModalShareMarketOrder';
 
 function Market() {
     const dispatch = useDispatch();
@@ -131,11 +131,11 @@ function Market() {
                     hide={() => setShowModalDetailMarketOrder(false)}
                     indexOrder={currentIdMarketOrder}
                 />
-                {/* <ModalShareMarketOrder
+                <ModalShareMarketOrder
                     show={showModalShareMarketOrder}
                     hide={() => setShowModalShareMarketOrder(false)}
                     order={currentMarketOrder}
-                /> */}
+                />
             </div>
             <Link to="/market/add" className="position-absolute end-3 bottom-3">
                 <Button
