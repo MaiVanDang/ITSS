@@ -66,7 +66,7 @@ function AddMarketOrder() {
     useEffect(() => {
         const fetchMeasure = async () => {
             try {
-                const result = await axios.get(Url('shopping/attribute/measures'));
+                const result = await axios.get(Url('market/attribute/measures'));
                 setListMeasure(result.data);
             } catch (error) {
                 alert(error);
