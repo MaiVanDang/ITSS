@@ -51,6 +51,7 @@ public class UserService {
             newUser.setGender(register.getGender());
             newUser.setAddress(register.getAddress());
             newUser.setCreateAt(now());
+            newUser.setUpdateAt(now());
             newUser.setStatus(1);
             newUser = userRepository.save(newUser);
             FridgeEntity newFridge = new FridgeEntity();

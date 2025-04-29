@@ -10,9 +10,37 @@ function SignUp() {
     const [showToast, setShowToast] = useState(false);
     const navigate = useNavigate();
     const [name, setName] = useState('');
-    const [gender, setGender] = useState('nam');
+    const [gender, setGender] = useState('Nam');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [email, setEmail] = useState('');
+    const [address, setAddress] = useState('');
+    const [avatar, setAvatar] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+
+    const validateForm = () => {
+        // Kiểm tra mật khẩu trùng khớp
+        if(password != confirmPassword) {
+            setPasswordError('Mật khẩu nhập lại không khớp!');
+            return false;
+        }
+
+        // Kiểm tra email hợp lệ
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (email && !emailRegex.test(email)) {
+            alert('Email không hợp lệ');
+            return false;
+        }
+
+        // Kiểm tra các trường bắt buộc
+        if (!name || !username || !password || !email) {
+            alert('Vui lòng điền đầy đủ thông tin bắt buộc');
+            return false;
+        }
+
+        return true;
+    }
 
     const handleRegister = async () => {
         const dataSubmit = {
@@ -20,10 +48,10 @@ function SignUp() {
             gender,
             username,
             password,
-            address: '',
-            email: '',
+            address,
+            email,
             avatar:
-                gender === 'nam'
+                gender === 'Nam'
                     ? 'https://cdn0.iconfinder.com/data/icons/user-pictures/100/malecostume-512.png'
                     : 'https://cdn4.iconfinder.com/data/icons/people-avatar-filled-outline/64/girl_female_young_people_woman_teenager_avatar-512.png',
         };
@@ -42,24 +70,30 @@ function SignUp() {
     };
 
     return (
-        <div className="bg rounded-4 positon-relative" style={{ height: '100vh' }}>
-            <div className="d-flex justify-content-center flex-column align-items-center">
-                <div className="mt-5 center">
+        <div className="bg rounded-4 position-relative" style={{ height: '100vh', overflowY: 'auto' }}>
+            <div className="d-flex justify-content-center flex-column align-items-center py-4">
+                <div className="mt-3 center">
                     <img src={img} alt="logo" className="w-100" />
                 </div>
-                <Form className="" style={{ width: '30%', marginTop: '6vh' }}>
+                <Form className="mb-4" style={{ width: '30%', minWidth: '320px', marginTop: '3vh' }}>
                     <h2 className="text-center mb-3">Đăng ký tài khoản</h2>
+                    
+                    {/* Thông tin cá nhân */}
+                    <h5 className="mt-4 mb-3">Thông tin cá nhân</h5>
+                    
                     <Form.Group className="fs-5 mb-3" controlId="ControlInput1">
-                        <Form.Label>Họ và Tên</Form.Label>
+                        <Form.Label>Họ và Tên <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             type="text"
-                            placeholder="Enter name"
+                            placeholder="Nhập họ và tên"
                             size="lg"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
+                            required
                         />
                     </Form.Group>
-                    <Form.Group className="fs-5 mb-4" controlId="ControlInput5">
+                    
+                    <Form.Group className="fs-5 mb-3" controlId="ControlInput5">
                         <Form.Label>Giới tính</Form.Label>
                         <Form.Select
                             size="lg"
@@ -68,38 +102,91 @@ function SignUp() {
                         >
                             <option value="nam">Nam</option>
                             <option value="nữ">Nữ</option>
-                            <option value="">Khác</option>
+                            <option value="khac">Khác</option>
                         </Form.Select>
                     </Form.Group>
+                    
+                    <Form.Group className="fs-5 mb-3" controlId="ControlInputEmail">
+                        <Form.Label>Email <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                            type="email"
+                            placeholder="example@email.com"
+                            size="lg"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </Form.Group>
+                    
+                    
+                    <Form.Group className="fs-5 mb-4" controlId="ControlInputAddress">
+                        <Form.Label>Địa chỉ</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={2}
+                            placeholder="Nhập địa chỉ"
+                            size="lg"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                        />
+                    </Form.Group>
+                    
+                    {/* Thông tin đăng nhập */}
+                    <h5 className="mt-4 mb-3">Thông tin đăng nhập</h5>
+                    
                     <Form.Group className="fs-5 mb-3" controlId="ControlInput2">
-                        <Form.Label>Nhập tên người dùng</Form.Label>
+                        <Form.Label>Tên đăng nhập <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             type="text"
-                            placeholder="Enter username"
+                            placeholder="Nhập tên đăng nhập"
                             size="lg"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
+                            required
                         />
                     </Form.Group>
+                    
                     <Form.Group className="fs-5 mb-3" controlId="ControlInput3">
-                        <Form.Label>Nhập mật khẩu</Form.Label>
+                        <Form.Label>Mật khẩu <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             type="password"
-                            placeholder="Enter password"
+                            placeholder="Nhập mật khẩu"
                             size="lg"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                setPasswordError('');
+                            }}
+                            required
                         />
                     </Form.Group>
+                    
                     <Form.Group className="fs-5 mb-4" controlId="ControlInput4">
-                        <Form.Label>Nhập lại mật khẩu</Form.Label>
-                        <Form.Control type="password" placeholder="Enter password" size="lg" />
+                        <Form.Label>Nhập lại mật khẩu <span className="text-danger">*</span></Form.Label>
+                        <Form.Control 
+                            type="password" 
+                            placeholder="Nhập lại mật khẩu" 
+                            size="lg"
+                            value={confirmPassword}
+                            onChange={(e) => {
+                                setConfirmPassword(e.target.value);
+                                setPasswordError('');
+                            }}
+                            required 
+                        />
+                        {passwordError && <div className="text-danger mt-1">{passwordError}</div>}
                     </Form.Group>
+                    
+                    <div className="mt-4 mb-2">
+                        <p><span className="text-danger">*</span> Thông tin bắt buộc</p>
+                    </div>
+                    
                     <div className="mt-4 text-center w-100">
                         <Button className="fs-4 signup_button border" onClick={handleRegister}>
                             Đăng ký
                         </Button>
                     </div>
+                    
                     <div
                         className="mt-3 d-flex justify-content-center"
                         style={{ fontSize: '1.2rem' }}
@@ -113,6 +200,7 @@ function SignUp() {
                     </div>
                 </Form>
             </div>
+            
             <Toast
                 onClose={() => setShowToast(false)}
                 show={showToast}
