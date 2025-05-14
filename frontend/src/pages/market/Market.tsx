@@ -24,33 +24,29 @@ function Market() {
     const [showModalDeleteMarketOrder, setShowModalDeleteMarketOrder] = useState(false);
     const [showModalDetailMarketOrder, setShowModalDetailMarketOrder] = useState(false);
     const [showModalShareMarketOrder, setShowModalShareMarketOrder] = useState(false);
-    const [currentIdMarketOrder, setCurrentIdMarketOrder] = useState(1);
+    const [currentIdMarketOrder, setCurrentIdMarketOrder] = useState(0);
     const [currentMarketOrder, setCurrentMarketOrder] = useState<marketProps>({} as marketProps);
 
     // Market order
     const callApi = async () => {
         try {
             const response = await axios.get(Url(`market/user/${userInfo?.id}`));
-            return response.data;
+            return response.data || []; // nếu không có đơn thì trả mảng rỗng
         } catch (error) {
-            alert('Không lấy được đơn đi chợ!!!');
-            return null;
+            console.error('Không lấy được đơn đi chợ!!!', error);
+            return []; // trả về mảng rỗng để tránh lỗi
         }
     };
 
     useEffect(() => {
         const fetchData = async () => {
-            try {
-                const results = await callApi();
-                dispatch(updateMarkets(results));
-            } catch (error) {
-                console.error(error);
-            }
+            const results = await callApi();
+            dispatch(updateMarkets(results));
         };
 
         fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showModalDetailMarketOrder, showModalDeleteMarketOrder, showModalShareMarketOrder]);
+
 
     return isLogin ? (
         <div className="position-relative">
@@ -71,7 +67,9 @@ function Market() {
                         </tr>
                     </thead>
                     <tbody>
-                        {marketOrders.map((order, index) => (
+                        {
+                            marketOrders.length > 0 ? (
+                                marketOrders.map((order, index) => (
                             <tr key={index}>
                                 <td>{index + 1}</td>
                                 <td>
@@ -118,7 +116,16 @@ function Market() {
                                     </div>
                                 </td>
                             </tr>
-                        ))}
+                        ))
+                                ) : (
+                                <tr>
+                                    <td colSpan={7} className="text-center">
+                                        Không có đơn đi chợ nào
+                                    </td>
+                                </tr>
+                            )
+                        }
+                        
                     </tbody>
                 </Table>
                 <ModalDeleteMarketOrder

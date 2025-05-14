@@ -31,14 +31,18 @@ function ModalDetailMarketOrder({
     const [showToast, setShowToast] = useState(false);
 
     const callApi = async () => {
+        if (indexOrder === 0) return null; // tránh gọi nếu chưa có indexOrder
+
         try {
             const response = await axios.get(Url(`market/show/detail/${indexOrder}`));
             return response.data;
         } catch (error) {
-            alert('Không lấy được shopping detail!!!');
+            console.error(error);
+            // alert('Không lấy được shopping detail!!!'); // không cần cảnh báo khi không có đơn
             return null;
         }
     };
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -119,8 +123,8 @@ function ModalDetailMarketOrder({
             <Modal size="xl" show={show} onHide={hide}>
                 <Modal.Header closeButton>
                     <Modal.Title className="fs-3">
-                        {shopping.code}
-                        {shopping.status === 1 ? (
+                        {shopping && shopping.code}
+                        {shopping && (shopping.status === 1 ? (
                             <Badge className="ms-3" pill bg="success">
                                 Hoàn thành
                             </Badge>
@@ -128,16 +132,16 @@ function ModalDetailMarketOrder({
                             <Badge className="ms-3" pill bg="warning">
                                 Đang thực hiện
                             </Badge>
-                        )}
+                        ))}
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <div className="mb-3 fs-5 d-flex justify-content-between">
                         <div>
-                            <b>Người tạo đơn:</b> {shopping.user?.name}
+                            <b>Người tạo đơn:</b> {shopping && shopping.user?.name}
                         </div>
                         <div>
-                            <b>Ngày tạo đơn:</b> {shopping.createAt}
+                            <b>Ngày tạo đơn:</b> {shopping && shopping.createAt}
                         </div>
                     </div>
                     <Tabs defaultActiveKey="ingredients" className="mb-3" justify>
@@ -159,7 +163,7 @@ function ModalDetailMarketOrder({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {shopping.attributes &&
+                                    {(shopping && shopping.attributes) &&
                                         shopping.attributes.map((attribute, index) => (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
@@ -280,7 +284,7 @@ function ModalDetailMarketOrder({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {shopping.attributes &&
+                                    {(shopping && shopping.attributes) &&
                                         shopping.dishes.map((dish, index) => (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
