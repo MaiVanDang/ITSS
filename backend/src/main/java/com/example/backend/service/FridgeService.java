@@ -119,10 +119,6 @@ public class FridgeService {
 
     public void addIngredients(Integer ingredientId, Integer fridgeId, Integer quantity, String measure,
             LocalDate expired) {
-        // Kiểm tra xem nguyên liệu đã có trong tủ lạnh
-        FridgeIngredientsEntity oldEntity = fridgeIngredientsRepository
-                .findByExpridedAndFridgeIdAndIngredientsId(
-                        expired, fridgeId, ingredientId);
 
         // Lấy thông tin nguyên liệu
         IngredientsEntity ingredientsEntity = ingredientRepository.findById(ingredientId)
@@ -130,6 +126,10 @@ public class FridgeService {
 
         // Tính toán hạn sử dụng mới
         LocalDate newExpiryDate = calculateNewExpiryDate(expired, ingredientsEntity);
+        // Kiểm tra xem nguyên liệu đã có trong tủ lạnh
+        FridgeIngredientsEntity oldEntity = fridgeIngredientsRepository
+                .findByExpridedAndFridgeIdAndIngredientsId(
+                        newExpiryDate, fridgeId, ingredientId);
 
         if (oldEntity != null) {
             oldEntity.setQuantity(oldEntity.getQuantity() + quantity);
@@ -166,6 +166,10 @@ public class FridgeService {
             return originalExpiry.plusDays(30);
         } else {
             // Nguyên liệu tươi
+            System.out.println(ingredient.getIngredientStatus());
+            System.out.println(daysUntilExpiry);
+            System.out.println(originalExpiry);
+            System.out.println(LocalDate.now());
             if (daysUntilExpiry >= 0 && daysUntilExpiry <= 2) {
                 // Sắp hết hạn (0-2 ngày): thêm 2 ngày
                 return originalExpiry.plusDays(2);

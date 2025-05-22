@@ -45,7 +45,7 @@ function Fridge() {
             }
             
             // Số ngày còn lại
-            const daysLeft = Math.floor((expiredDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+            const daysLeft = Math.floor((expiredDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24) + 1);
             
             let tooltipText = "";
             
