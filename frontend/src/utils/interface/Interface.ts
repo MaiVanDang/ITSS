@@ -15,6 +15,7 @@ export interface ingredientProps {
     createAt: string;
     updateAt: string | null;
     dueDate: number;
+    ingredientStatus: string;
 }
 
 export interface dishsProps {
@@ -64,6 +65,7 @@ export interface attributesProps {
     measure: string;
     buyAt: string;
     quantity: number;
+    ingredientStatus: string;
 }
 
 export interface dishesProps {

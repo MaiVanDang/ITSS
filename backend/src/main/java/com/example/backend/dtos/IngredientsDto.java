@@ -1,10 +1,12 @@
 package com.example.backend.dtos;
 
 import lombok.Data;
+import lombok.Getter;
 
 import java.time.LocalDate;
 
 @Data
+@Getter
 public class IngredientsDto {
     private Integer id;
     private String name;
@@ -14,5 +16,5 @@ public class IngredientsDto {
     private Integer dueDate;
     private LocalDate createAt;
     private LocalDate updateAt;
-
+    private String ingredientStatus;
 }

@@ -24,12 +24,12 @@ public class IngredientsService {
         List<IngredientsDto> dtos = new ArrayList<IngredientsDto>();
         List<IngredientsEntity> entities = ingredientsRepository.findAll();
 
-
-        dtos = Arrays.asList(ingredientsModelMapper.map(entities,IngredientsDto[].class));
+        dtos = Arrays.asList(ingredientsModelMapper.map(entities, IngredientsDto[].class));
         return dtos;
     }
+
     public void addIngredient(IngredientsDto ingredientsDto) {
-        if(ingredientsRepository.findByName(ingredientsDto.getName())!= null) {
+        if (ingredientsRepository.findByName(ingredientsDto.getName()) != null) {
             throw new DuplicateException("Đã có nguyên liệu này ");
         }
         IngredientsEntity entity = ingredientsModelMapper.map(ingredientsDto, IngredientsEntity.class);
@@ -37,6 +37,7 @@ public class IngredientsService {
         entity.setCreateAt(now());
         ingredientsRepository.save(entity);
     }
+
     public void deleteIngredient(Integer id) {
         IngredientsEntity entity = ingredientsRepository.findById(id).get();
         entity.setUpdateAt(now());
@@ -44,30 +45,34 @@ public class IngredientsService {
         entity.setStatus(0);
         ingredientsRepository.save(entity);
     }
+
     public void activeIngredient(Integer id) {
         IngredientsEntity entity = ingredientsRepository.findById(id).get();
         entity.setUpdateAt(now());
         entity.setStatus(1);
         ingredientsRepository.save(entity);
     }
+
     public List<IngredientsDto> getIngredientByFilter(String name, Integer status) {
         Integer filterStatus = null;
 
-        if(status == 1 || status ==0) {
+        if (status == 1 || status == 0) {
             filterStatus = status;
         }
         List<IngredientsDto> dtos = new ArrayList<IngredientsDto>();
         List<IngredientsEntity> entities = ingredientsRepository.findByFilters(name, filterStatus);
-        dtos = Arrays.asList(ingredientsModelMapper.map(entities,IngredientsDto[].class));
+        dtos = Arrays.asList(ingredientsModelMapper.map(entities, IngredientsDto[].class));
         return dtos;
     }
-    public void updateIngredient(Integer id ,IngredientsDto ingredient) {
+
+    public void updateIngredient(Integer id, IngredientsDto ingredient) {
         IngredientsEntity entity = ingredientsRepository.findById(id).get();
         entity.setName(ingredient.getName());
         entity.setDescription(ingredient.getDescription());
         entity.setImage(ingredient.getImage());
         entity.setDueDate(ingredient.getDueDate());
         entity.setUpdateAt(now());
+        entity.setIngredientStatus(ingredient.getIngredientStatus());
         ingredientsRepository.save(entity);
     }
 }

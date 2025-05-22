@@ -91,6 +91,7 @@ function Ingredients() {
                             <th>Ngày tạo</th>
                             <th>Hết hạn (ngày)</th>
                             <th>Xóa</th>
+                            <th>Loại</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -115,7 +116,7 @@ function Ingredients() {
                                 <td>
                                     {ingredient.status === 1 ? (
                                         <Badge pill bg="success">
-                                            Sẵn sàng đặt món
+                                            Sẵn sàng mua
                                         </Badge>
                                     ) : (
                                         <Badge pill bg="danger">
@@ -143,6 +144,25 @@ function Ingredients() {
                                             <FontAwesomeIcon icon={faRotateLeft} />
                                         </div>
                                     )}
+                                </td>
+                                <td>
+                                    {ingredient.ingredientStatus === 'INGREDIENT' ? (
+                                        <Badge pill bg="primary">
+                                            Nguyên liệu
+                                        </Badge>
+                                    ) : ingredient.ingredientStatus === 'FRESH_INGREDIENT' ? (
+                                        <Badge pill bg="success">
+                                            Nguyên liệu tươi
+                                        </Badge>
+                                    ) : ingredient.ingredientStatus === 'DRY_INGREDIENT' ? (
+                                        <Badge pill bg="secondary">
+                                            Nguyên liệu khô
+                                        </Badge>
+                                    ) : ingredient.ingredientStatus === 'SEASONING' ? (
+                                        <Badge pill bg="warning">
+                                            Gia vị nêm
+                                        </Badge>
+                                    ) : null}
                                 </td>
                             </tr>
                         ))}
