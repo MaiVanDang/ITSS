@@ -1,6 +1,5 @@
 package com.example.backend.controller;
 
-import com.example.backend.dtos.FridgeDto;
 import com.example.backend.dtos.ShoppingDto;
 import com.example.backend.service.ShoppingService;
 import org.springframework.beans.factory.annotation.Autowired;

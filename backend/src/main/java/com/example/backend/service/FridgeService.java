@@ -18,7 +18,6 @@ import static java.time.LocalDate.now;
 @Service
 @RequiredArgsConstructor
 public class FridgeService {
-    private final GroupMemberRepository groupMemberRepository;
     private final GroupRepository groupRepository;
     private final FridgeRepository fridgeRepository;
     private final UserRepository userRepository;
@@ -160,7 +159,6 @@ public class FridgeService {
 
         // Kiểm tra loại nguyên liệu
         boolean isDryIngredient = "DRY_INGREDIENT".equalsIgnoreCase(ingredient.getIngredientStatus());
-        boolean isFresIngredient = "FRESH_INGREDIENT".equalsIgnoreCase(ingredient.getIngredientStatus());
         if (isDryIngredient) {
             // Nguyên liệu khô: luôn thêm 30 ngày
             return originalExpiry.plusDays(30);

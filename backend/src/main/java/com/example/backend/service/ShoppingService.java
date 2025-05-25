@@ -7,7 +7,6 @@ import com.example.backend.exception.NotCanDoException;
 import com.example.backend.exception.NotFoundException;
 import com.example.backend.repository.*;
 import lombok.RequiredArgsConstructor;
-import net.bytebuddy.dynamic.DynamicType.Builder.FieldDefinition.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -90,19 +89,6 @@ public class ShoppingService {
     }
 
     public void addShopping(ShoppingDto shoppingDto) {
-
-        if (shoppingDto.getDishes() != null && !shoppingDto.getDishes().isEmpty()) {
-            for (int i = 0; i < shoppingDto.getDishes().size(); i++) {
-                DishAttributeDto dish = shoppingDto.getDishes().get(i);
-            }
-        }
-
-        // In thông tin nguyên liệu bổ sung
-        if (shoppingDto.getAttributes() != null && !shoppingDto.getAttributes().isEmpty()) {
-            for (int i = 0; i < shoppingDto.getAttributes().size(); i++) {
-                ShoppingAttributeDto attr = shoppingDto.getAttributes().get(i);
-            }
-        }
 
         // Code xử lý chính
         if (shoppingRepository.findByCode(shoppingDto.getCode()) != null) {
@@ -282,8 +268,6 @@ public class ShoppingService {
         } else {
             ShoppingAttributeEntity attributeEntity = attributeRepository.findByShoppingIdAndIngredientsIdAndMeasure(id,
                     attributeId, measure);
-            IngredientsEntity ingredientEntity = ingredientsRepository.findById(attributeEntity.getIngredientsId())
-                    .get();
 
             attributeEntity.setBuyAt(null);
             attributeEntity.setExprided(null);
