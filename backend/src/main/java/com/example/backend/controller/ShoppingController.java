@@ -2,6 +2,9 @@ package com.example.backend.controller;
 
 import com.example.backend.dtos.ShoppingDto;
 import com.example.backend.service.ShoppingService;
+
+import jakarta.persistence.criteria.CriteriaBuilder.In;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -68,7 +71,8 @@ public class ShoppingController {
         Integer id = (Integer) request.get("id");
         Integer attributeId = (Integer) request.get("attributeId");
         String measure = (String) request.get("measure");
-        shoppingService.updateShoppingAttribute(id, attributeId, measure);
+        Integer quantity = (Integer) request.get("quantity");
+        shoppingService.updateShoppingAttribute(id, attributeId, measure, quantity);
         return "success";
     }
 
@@ -78,7 +82,8 @@ public class ShoppingController {
         Integer id = (Integer) request.get("id");
         Integer attributeId = (Integer) request.get("attributeId");
         String measure = (String) request.get("measure");
-        shoppingService.removeUpdateShoppingAttribute(id, attributeId, measure);
+        Integer quantity = (Integer) request.get("quantity");
+        shoppingService.removeUpdateShoppingAttribute(id, attributeId, measure, quantity);
         return "success";
     }
 

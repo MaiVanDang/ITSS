@@ -236,7 +236,8 @@ public class ShoppingService {
         shoppingRepository.deleteById(id);
     }
 
-    public void updateShoppingAttribute(Integer id, Integer attributeId, String measure) {
+    public void updateShoppingAttribute(Integer id, Integer attributeId, String measure, Integer quantity) {
+
         if (attributeRepository.findById(id) == null) {
             throw new NotFoundException("Không tìm thấy đơn đi chợ với mã đơn : " + id);
         } else {
@@ -249,6 +250,13 @@ public class ShoppingService {
             attributeEntity.setBuyAt(now());
             attributeEntity.setExprided(now().plusDays(ingredientEntity.getDueDate()));
             attributeEntity.setStatus(1);
+            attributeEntity.setStatusbuy(true);
+            attributeEntity.setStatusstore(true);
+            if (attributeEntity.getQuantitystore() != null) {
+                attributeEntity.setQuantitystore(quantity + attributeEntity.getQuantitystore());
+            } else {
+                attributeEntity.setQuantitystore(quantity);
+            }
             attributeRepository.save(attributeEntity);
             List<ShoppingAttributeEntity> attributes = attributeRepository.findByShoppingId(id);
             Integer check = 1;
@@ -262,18 +270,29 @@ public class ShoppingService {
         }
     }
 
-    public void removeUpdateShoppingAttribute(Integer id, Integer attributeId, String measure) {
+    public void removeUpdateShoppingAttribute(Integer id, Integer attributeId, String measure, Integer quantity) {
         if (attributeRepository.findByShoppingId(id) == null) {
             throw new NotFoundException("Không tìm thấy đơn đi chợ với mã đơn : " + id);
         } else {
+            ShoppingEntity shopping = shoppingRepository.findById(id).get();
             ShoppingAttributeEntity attributeEntity = attributeRepository.findByShoppingIdAndIngredientsIdAndMeasure(id,
                     attributeId, measure);
+            IngredientsEntity ingredientEntity = ingredientsRepository.findById(attributeEntity.getIngredientsId())
+                    .get();
 
             attributeEntity.setBuyAt(null);
             attributeEntity.setExprided(null);
             attributeEntity.setStatus(0);
-            ShoppingEntity shopping = shoppingRepository.findById(attributeEntity.getShoppingId()).get();
+            attributeEntity.setStatusbuy(false);
+            attributeEntity.setStatusstore(false);
+            if (attributeEntity.getQuantitystore() != null) {
+                attributeEntity.setQuantitystore(attributeEntity.getQuantitystore() - quantity);
+            } else {
+                attributeEntity.setQuantitystore(0);
+            }
+
             shopping.setStatus(0);
+            shoppingRepository.save(shopping);
             attributeRepository.save(attributeEntity);
         }
     }
@@ -392,6 +411,9 @@ public class ShoppingService {
                     attributeDto.setId(entity.getId());
                     attributeDto.setUser(userDto);
                     attributeDto.setIngredients(ingredientsDto);
+                    attributeDto.setShoppingId(entity.getShoppingId());
+                    attributeDto.setStatus(entity.getStatus());
+                    attributeDto.setIngredientId(entity.getIngredientsId());
                     attributeDto.setExprided(entity.getExprided());
                     attributeDto.setMeasure(entity.getMeasure());
                     attributeDto.setBuyAt(entity.getBuyAt());

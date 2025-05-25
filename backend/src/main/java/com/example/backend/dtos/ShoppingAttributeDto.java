@@ -28,4 +28,5 @@ public class ShoppingAttributeDto {
     private String image;
     private String name;
     private String ingredient_status;
+    private Integer ingredientId;
 }

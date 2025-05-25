@@ -57,16 +57,26 @@ public class FridgeController {
         Object quantityObj = request.get("quantity");
         Object measureObj = request.get("measure");
         Object expridedObj = request.get("exprided");
+        Object ShoppingAttributeIdObj = request.get("shoppingAttributeId");
 
         Integer fridgeId = (fridgeIdObj instanceof Number) ? ((Number) fridgeIdObj).intValue() : null;
         Integer ingredientId = (ingredientIdObj instanceof Number) ? ((Number) ingredientIdObj).intValue() : null;
         Integer quantity = (quantityObj instanceof Number) ? ((Number) quantityObj).intValue() : null;
         String measure = (measureObj instanceof String) ? (String) measureObj : null;
+        Integer shoppingAttributeId = (ShoppingAttributeIdObj instanceof Number)
+                ? ((Number) ShoppingAttributeIdObj).intValue()
+                : null;
 
+        System.out.println("fridgeId: " + fridgeId);
+        System.out.println("ingredientId: " + ingredientId);
+        System.out.println("quantity: " + quantity);
+        System.out.println("measure: " + measure);
+        System.out.println("shoppingAttributeId: " + shoppingAttributeId);
         // Special handling for date
         LocalDate expridedWhenShopping = LocalDate.parse(expridedObj.toString());
 
-        fridgeService.addIngredients(ingredientId, fridgeId, quantity, measure, expridedWhenShopping);
+        fridgeService.addIngredients(ingredientId, fridgeId, quantity, measure, expridedWhenShopping,
+                shoppingAttributeId);
         return "success";
     }
 

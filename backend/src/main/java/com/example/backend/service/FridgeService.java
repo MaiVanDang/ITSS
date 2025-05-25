@@ -20,6 +20,7 @@ import static java.time.LocalDate.now;
 public class FridgeService {
     private final GroupRepository groupRepository;
     private final FridgeRepository fridgeRepository;
+    private final ShoppingAttributeRepository shoppingAttributeRepository;
     private final UserRepository userRepository;
     private final FridgeIngredientsRepository fridgeIngredientsRepository;
     private final IngredientsRepository ingredientRepository;
@@ -117,7 +118,7 @@ public class FridgeService {
     }
 
     public void addIngredients(Integer ingredientId, Integer fridgeId, Integer quantity, String measure,
-            LocalDate expired) {
+            LocalDate expired, Integer shoppingAttributeId) {
 
         // Lấy thông tin nguyên liệu
         IngredientsEntity ingredientsEntity = ingredientRepository.findById(ingredientId)
@@ -129,6 +130,11 @@ public class FridgeService {
         FridgeIngredientsEntity oldEntity = fridgeIngredientsRepository
                 .findByExpridedAndFridgeIdAndIngredientsId(
                         newExpiryDate, fridgeId, ingredientId);
+        ShoppingAttributeEntity shoppingAttributeEntity = shoppingAttributeRepository.findById(shoppingAttributeId)
+                .get();
+        shoppingAttributeEntity.setStatusstore(false);
+        shoppingAttributeEntity.setQuantitystore(0);
+        shoppingAttributeRepository.save(shoppingAttributeEntity);
 
         if (oldEntity != null) {
             oldEntity.setQuantity(oldEntity.getQuantity() + quantity);

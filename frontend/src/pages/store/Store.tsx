@@ -13,6 +13,7 @@ interface ShoppingAttributeDto {
     buyAt: string;
     exprided: string;
     ingredientStatus: string;
+    ingredientId: number;
 }
 
 interface PurchasedItem {
@@ -114,6 +115,13 @@ function Store() {
             return;
         }
 
+        // ✅ KIỂM TRA FRIDGEID TRƯỚC KHI GỬI REQUEST
+        if (!userInfo?.fridgeId) {
+            showToastMessage('danger', 'Không tìm thấy thông tin tủ lạnh. Vui lòng đăng nhập lại.');
+            console.error('fridgeId is null or undefined:', userInfo);
+            return;
+        }
+
         if (isExpired(attr.exprided)) {
             showToastMessage('danger', `${item.name} đã hết hạn (${attr.exprided}).`);
             return;
@@ -124,19 +132,41 @@ function Store() {
             return;
         }
 
+        if (item.name.trim() === "Gạo") {
+            showToastMessage('warning', 'Gạo không cần thêm vào tủ lạnh.');
+            return;
+        }
+
         try {
-            await axios.post(Url(`fridge/ingredients`), {
-                fridgeId: userInfo?.fridgeId,
+            const requestData = {
+                fridgeId: userInfo.fridgeId,
+                ingredientId: attr.ingredientId,
                 quantity: item.quantitystore,
                 measure: attr.measure,
                 exprided: attr.exprided,
-            });
+                shoppingAttributeId: attr.id,
+            };
+
+            console.log('Sending request to add ingredient:', requestData);
+            console.log('Item data:', item);
+            console.log('Attribute data:', attr);
+
+            await axios.post(Url(`fridge/ingredients`), requestData);
 
             showToastMessage('success', `Đã thêm ${item.name} vào tủ lạnh!`);
             fetchPurchasedItems();
         } catch (error: any) {
             console.error('Lỗi khi thêm vào tủ lạnh:', error);
-            showToastMessage('danger', error.response?.data?.message || 'Không thể thêm vào tủ lạnh');
+            console.error('Error response:', error.response?.data);
+            
+            // ✅ CHI TIẾT HÓA ERROR HANDLING
+            if (error.response?.status === 400) {
+                showToastMessage('danger', 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.');
+            } else if (error.response?.status === 404) {
+                showToastMessage('danger', 'Không tìm thấy tủ lạnh hoặc nguyên liệu.');
+            } else {
+                showToastMessage('danger', error.response?.data?.message || 'Không thể thêm vào tủ lạnh');
+            }
         }
     };
 
@@ -154,6 +184,12 @@ function Store() {
                 return <Badge pill bg="light">Không xác định</Badge>;
         }
     };
+
+    // ✅ THÊM DEBUG INFO CHO USERINFO
+    useEffect(() => {
+        console.log('Current userInfo:', userInfo);
+        console.log('fridgeId:', userInfo?.fridgeId);
+    }, []);
 
     if (loading) {
         return (
@@ -178,6 +214,14 @@ function Store() {
                 </Button>
             </div>
 
+            {/* ✅ THÊM DEBUG INFO CHO USER */}
+            {!userInfo?.fridgeId && (
+                <div className="alert alert-warning">
+                    <strong>Cảnh báo:</strong> Không tìm thấy thông tin tủ lạnh. 
+                    Vui lòng đăng nhập lại để sử dụng chức năng thêm vào tủ lạnh.
+                </div>
+            )}
+
             {purchasedItems.length === 0 ? (
                 <div className="text-center p-4">
                     <FontAwesomeIcon icon={faShoppingCart} size="3x" className="text-muted mb-3" />
@@ -200,7 +244,6 @@ function Store() {
                             <th>Ngày mua</th>
                             <th>Ngày hết hạn</th>
                             <th>Trạng thái</th>
-                            <th>Mã đơn</th>
                             <th>Thêm vào tủ lạnh</th>
                         </tr>
                     </thead>
@@ -239,22 +282,31 @@ function Store() {
                                             {status}
                                         </Badge>
                                     </td>
-                                    <td><small className="text-muted">{item.orderCode}</small></td>
                                     <td className="text-center">
                                         <Button
-                                            variant={isExpired(attr?.exprided) ? "outline-danger" : "outline-success"}
+                                            variant={
+                                                isExpired(attr?.exprided) ? "outline-danger" : 
+                                                !userInfo?.fridgeId ? "outline-secondary" :
+                                                "outline-success"
+                                            }
                                             size="sm"
                                             onClick={() => handleAddToFridge(item)}
-                                            disabled={isExpired(attr?.exprided)}
+                                            disabled={isExpired(attr?.exprided) || !userInfo?.fridgeId}
                                             title={
                                                 isExpired(attr?.exprided) 
                                                     ? "Không thể thêm thực phẩm hết hạn vào tủ lạnh"
+                                                    : !userInfo?.fridgeId
+                                                    ? "Không tìm thấy thông tin tủ lạnh"
                                                     : "Thêm vào tủ lạnh"
                                             }
                                         >
                                             <FontAwesomeIcon 
                                                 icon={faCheckCircle} 
-                                                className={isExpired(attr?.exprided) ? "text-danger" : "text-success"}
+                                                className={
+                                                    isExpired(attr?.exprided) ? "text-danger" : 
+                                                    !userInfo?.fridgeId ? "text-secondary" :
+                                                    "text-success"
+                                                }
                                             />
                                         </Button>
                                     </td>

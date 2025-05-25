@@ -58,13 +58,16 @@ function ModalDetailMarketOrder({
         status: 1 | 0 | null,
         ingredientId: number,
         measure: string,
+        quantity: number,
     ) => {
+
         if (status === 1) {
             try {
                 await axios.put(Url(`market/remove`), {
                     id: indexOrder,
                     attributeId: ingredientId,
                     measure,
+                    quantity,
                 });
                 setReload(Math.random());
             } catch (error) {
@@ -77,6 +80,7 @@ function ModalDetailMarketOrder({
                     id: indexOrder,
                     attributeId: ingredientId,
                     measure,
+                    quantity,
                 });
                 setReload(Math.random());
             } catch (error) {
@@ -117,14 +121,14 @@ function ModalDetailMarketOrder({
         return expDate < today;
     };
 
-    // Kiểm tra nguyên liệu sắp hết hạn (trong vòng 3 ngày)
+    // Kiểm tra nguyên liệu sắp hết hạn (trong vòng 2 ngày)
     const isExpiringSoon = (expirationDate: string) => {
         if (!expirationDate) return false;
         
         const today = new Date();
         const expDate = new Date(expirationDate);
         const threeDaysFromNow = new Date();
-        threeDaysFromNow.setDate(today.getDate() + 3);
+        threeDaysFromNow.setDate(today.getDate() + 2);
         
         // Reset time to compare only dates
         today.setHours(0, 0, 0, 0);
@@ -378,6 +382,7 @@ function ModalDetailMarketOrder({
                                                                 attribute.status,
                                                                 attribute.ingredients.id,
                                                                 attribute.measure,
+                                                                1,
                                                             )
                                                         }
                                                     />
