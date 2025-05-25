@@ -40,8 +40,8 @@ function SignOut() {
             <Button
                 variant="dark"
                 onClick={handleShow}
-                className="mt-5 fs-6 w-100 text-dark border d-flex justify-content-start align-items-center position-relative "
-                style={{ backgroundColor: '#E6E6FA', minHeight: 70 }}
+                className="fs-6 w-100 text-dark border d-flex justify-content-start align-items-center position-relative "
+                style={{ backgroundColor: '#E6E6FA', minHeight: 70, marginTop: 20 }}
             >
                 <span>Đăng xuất</span>
                 <span className="position-absolute end-15 ">

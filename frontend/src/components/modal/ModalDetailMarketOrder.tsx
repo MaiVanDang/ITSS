@@ -164,17 +164,6 @@ function ModalDetailMarketOrder({
         ingredient: any, 
         ingredientStatus: string
     ) => {
-        // Kiểm tra xem có phải gia vị nêm không
-        if (ingredientStatus === 'SEASONING') {
-            showToastMessage('warning', 'Không nhất thiết phải thêm gia vị nêm vào tủ lạnh.');
-            return;
-        }
-        
-        // Kiểm tra xem có phải gạo không
-        if (isSpiceOrRice(ingredient)) {
-            showToastMessage('warning', `${ingredient.name} không nhất thiết phải thêm vào tủ lạnh.`);
-            return;
-        }
 
         // Kiểm tra nguyên liệu đã hết hạn chưa
         if (isExpired(exprided)) {
@@ -187,6 +176,20 @@ function ModalDetailMarketOrder({
             await resetBuyStatus(ingredientId, measure);
             return;
         }
+        
+        // Kiểm tra xem có phải gia vị nêm không
+        if (ingredientStatus === 'SEASONING') {
+            showToastMessage('warning', 'Không nhất thiết phải thêm gia vị nêm vào tủ lạnh.');
+            return;
+        }
+        
+        // Kiểm tra xem có phải gạo không
+        if (isSpiceOrRice(ingredient)) {
+            showToastMessage('warning', `${ingredient.name} không nhất thiết phải thêm vào tủ lạnh.`);
+            return;
+        }
+
+        
 
         // Kiểm tra nguyên liệu sắp hết hạn
         if (isExpiringSoon(exprided)) {

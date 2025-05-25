@@ -108,3 +108,14 @@ export interface fridgeProps {
     type: number;
     ingredients: ingredientsProps[];
 }
+
+export interface storeProps {
+    id?: number;
+    ingredient: ingredientProps;
+    quantity: number;
+    measure: string;
+    exprided?: string;
+    createAt?: string;
+    status?: number;
+    image?: string;
+}

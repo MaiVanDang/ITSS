@@ -2,7 +2,6 @@ package com.example.backend.entities;
 
 import lombok.Data;
 
-
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,4 +29,10 @@ public class ShoppingAttributeEntity {
     private LocalDate exprided;
     @Column
     private BigDecimal quantity;
+    @Column
+    private Boolean statusbuy;
+    @Column
+    private Boolean statusstore;
+    @Column
+    private Integer quantitystore;
 }

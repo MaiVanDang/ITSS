@@ -131,3 +131,11 @@ foreign key (fridge_id) references fridge(id),
 foreign key (ingredients_id) references ingredients(id)
 )
 
+ALTER TABLE shopping_attribute
+ADD statusbuy BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE shopping_attribute
+ADD statusstore BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE shopping_attribute
+ADD quantitystore INTEGER DEFAULT 0;

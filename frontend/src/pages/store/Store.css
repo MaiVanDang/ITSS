@@ -1,0 +1,17 @@
+/* Custom styles for the Fridge table */
+.expiring-soon {
+    background-color: #FFEB3B !important; /* Yellow color for expiring soon */
+}
+
+.expired {
+    background-color: #FF5252 !important; /* Red color for expired */
+}
+
+/* Override any bootstrap styles that might conflict */
+.table-hover tbody tr.expiring-soon:hover {
+    background-color: #FFC107 !important; /* Darker yellow on hover */
+}
+
+.table-hover tbody tr.expired:hover {
+    background-color: #F44336 !important; /* Darker red on hover */
+}

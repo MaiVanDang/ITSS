@@ -21,5 +21,11 @@ public class ShoppingAttributeDto {
     private LocalDate buyAt;
     private BigDecimal quantity;
     private String ingredientStatus;
-
+    private Boolean statusbuy;
+    private Boolean statusstore;
+    private Integer quantitystore;
+    private Integer shoppingId;
+    private String image;
+    private String name;
+    private String ingredient_status;
 }

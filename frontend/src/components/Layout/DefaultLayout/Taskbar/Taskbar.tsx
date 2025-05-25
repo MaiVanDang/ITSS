@@ -68,15 +68,17 @@ function Taskbar() {
                     <NavItem text="Nguyên liệu" icon={faKitchenSet} href="/ingredients" />
                     <NavItem text="Đơn đi chợ" icon={faStore} href="/market" />
                     <NavItem text="Tủ lạnh" icon={faToiletPortable} href="/fridge" />
+                    <NavItem text="Nhà kho" icon={faHouse} href="/store" />
                     <NavItem text="Xem nhóm" icon={faPeopleGroup} href="/group" />
+                    <SignOut/>
                 </div>
             )}
 
-            {isLogin && (
+            {/* {isLogin && (
                 <div className="mt-5 mb-5">
                     <SignOut />
                 </div>
-            )}
+            )} */}
         </div>
     );
 }

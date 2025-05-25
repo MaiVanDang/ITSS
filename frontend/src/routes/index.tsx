@@ -9,6 +9,7 @@ import AddMarketOrder from '../pages/add-market-order/AddMarketOrder';
 import Group from '../pages/group/Group';
 import GroupDetail from '../components/group-detail/GroupDetail';
 import Fridge from '../pages/fridge/Fridge';
+import Store from '../pages/store/Store';
 import AddDish from '../pages/add-dish/AddDish';
 interface RouteConfig {
     path: string;
@@ -26,6 +27,7 @@ const publicRoutes: RouteConfig[] = [
    { path: '/group', component: Group },
    { path: '/group/:id', component: GroupDetail },
    { path: '/fridge', component: Fridge },
+   { path: '/store', component: Store },
     { path: '/sign-up', component: SignUp, layout: null },
     { path: '/', component: SignIn, layout: null },
 ];
