@@ -33,6 +33,4 @@ public class ShoppingAttributeEntity {
     private Boolean statusbuy;
     @Column
     private Boolean statusstore;
-    @Column
-    private Integer quantitystore;
 }

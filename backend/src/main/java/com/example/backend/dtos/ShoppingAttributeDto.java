@@ -23,7 +23,7 @@ public class ShoppingAttributeDto {
     private String ingredientStatus;
     private Boolean statusbuy;
     private Boolean statusstore;
-    private Integer quantitystore;
+    private BigDecimal quantityStore;
     private Integer shoppingId;
     private String image;
     private String name;

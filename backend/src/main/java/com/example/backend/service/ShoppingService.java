@@ -3,7 +3,6 @@ package com.example.backend.service;
 import com.example.backend.dtos.*;
 import com.example.backend.entities.*;
 import com.example.backend.exception.DuplicateException;
-import com.example.backend.exception.NotCanDoException;
 import com.example.backend.exception.NotFoundException;
 import com.example.backend.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,7 @@ import static java.time.LocalDate.now;
 public class ShoppingService {
     private static final Logger logger = LoggerFactory.getLogger(ShoppingService.class);
     private final ShoppingRepository shoppingRepository;
-    private final ShoppingAttributeRepository shoppingAttributeRepository;
+    private final StoreRepository storeRepository;
     private final DishIngredientsRepository dishIngredientsRepository;
     private final ShoppingAttributeRepository attributeRepository;
     private final DishAttributeRepository dishAttributeRepository;
@@ -221,22 +220,25 @@ public class ShoppingService {
         return shoppingDtos;
     }
 
-    public void deleteShopping(Integer id) {
-        List<ShoppingAttributeEntity> shoppingAttributes = attributeRepository.findByShoppingId(id);
-        for (ShoppingAttributeEntity shoppingAttribute : shoppingAttributes) {
-            if (shoppingAttribute.getStatus() == 1) {
-                throw new NotCanDoException("Đơn hàng đang thực hiện, không thể xóa");
-            }
-        }
+    public void deleteShopping(Integer orderId) {
+
         // Xóa dữ liệu trong bảng GroupShopping trước
-        groupShoppingRepository.deleteByShoppingId(id);
+        groupShoppingRepository.deleteByShoppingId(orderId);
         // Xóa dữ liệu trong bảng Dish_Attribute
-        dishAttributeRepository.deleteByShoppingId(id);
+        dishAttributeRepository.deleteByShoppingId(orderId);
         // Cuối cùng mới xóa được
-        shoppingRepository.deleteById(id);
+        shoppingRepository.deleteById(orderId);
     }
 
-    public void updateShoppingAttribute(Integer id, Integer attributeId, String measure, Integer quantity) {
+    public void updateShoppingAttribute(Integer id, Integer attributeId, String measure, Integer quantity,
+            LocalDate buyAt, LocalDate exprided) {
+
+        System.out.println("id: " + id);
+        System.out.println("attributeId: " + attributeId);
+        System.out.println("measure: " + measure);
+        System.out.println("quantity: " + quantity);
+        System.out.println("buyAt: " + buyAt);
+        System.out.println("exprided: " + exprided);
 
         if (attributeRepository.findById(id) == null) {
             throw new NotFoundException("Không tìm thấy đơn đi chợ với mã đơn : " + id);
@@ -247,16 +249,31 @@ public class ShoppingService {
             IngredientsEntity ingredientEntity = ingredientsRepository.findById(attributeEntity.getIngredientsId())
                     .get();
 
+            StoreEntity oldStore = storeRepository.findByIngredientsIdAndBuyAtAndExpridedAt(
+                    attributeEntity.getIngredientsId(),
+                    buyAt,
+                    exprided);
+            if (oldStore != null) {
+                // Nếu đã có trong bảng store, cập nhật số lượng
+                oldStore.setQuantity(oldStore.getQuantity().add(BigDecimal.valueOf(quantity)));
+                storeRepository.save(oldStore);
+            } else {
+                // Nếu chưa có trong bảng store, tạo mới
+                StoreEntity storeEntity = new StoreEntity();
+                storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
+                storeEntity.setUserId(attributeEntity.getUserId());
+                storeEntity.setQuantity(BigDecimal.valueOf(quantity));
+                storeEntity.setBuyAt(buyAt);
+                storeEntity.setExpridedAt(exprided);
+                storeEntity.setMeasure(attributeEntity.getMeasure());
+                storeRepository.save(storeEntity);
+            }
+
             attributeEntity.setBuyAt(now());
             attributeEntity.setExprided(now().plusDays(ingredientEntity.getDueDate()));
             attributeEntity.setStatus(1);
             attributeEntity.setStatusbuy(true);
             attributeEntity.setStatusstore(true);
-            if (attributeEntity.getQuantitystore() != null) {
-                attributeEntity.setQuantitystore(quantity + attributeEntity.getQuantitystore());
-            } else {
-                attributeEntity.setQuantitystore(quantity);
-            }
             attributeRepository.save(attributeEntity);
             List<ShoppingAttributeEntity> attributes = attributeRepository.findByShoppingId(id);
             Integer check = 1;
@@ -277,19 +294,12 @@ public class ShoppingService {
             ShoppingEntity shopping = shoppingRepository.findById(id).get();
             ShoppingAttributeEntity attributeEntity = attributeRepository.findByShoppingIdAndIngredientsIdAndMeasure(id,
                     attributeId, measure);
-            IngredientsEntity ingredientEntity = ingredientsRepository.findById(attributeEntity.getIngredientsId())
-                    .get();
 
             attributeEntity.setBuyAt(null);
             attributeEntity.setExprided(null);
             attributeEntity.setStatus(0);
             attributeEntity.setStatusbuy(false);
             attributeEntity.setStatusstore(false);
-            if (attributeEntity.getQuantitystore() != null) {
-                attributeEntity.setQuantitystore(attributeEntity.getQuantitystore() - quantity);
-            } else {
-                attributeEntity.setQuantitystore(0);
-            }
 
             shopping.setStatus(0);
             shoppingRepository.save(shopping);
@@ -379,76 +389,34 @@ public class ShoppingService {
     }
 
     public List<ShoppingDto> getDetailUserStore(Integer userId) {
+        List<StoreEntity> storeEntities = storeRepository.findByUserId(userId);
         List<ShoppingDto> dtoList = new ArrayList<>();
-
-        List<ShoppingAttributeEntity> entities = shoppingAttributeRepository.findByUserId(userId);
-        System.out.println("entities: " + entities.size());
-
-        if (entities.isEmpty()) {
-            throw new NotFoundException("Không tìm thấy nguyên liệu đã mua nào của người dùng với ID: " + userId);
+        for (StoreEntity storeEntity : storeEntities) {
+            ShoppingDto dto = new ShoppingDto();
+            dto.setId(storeEntity.getId());
+            dto.setUser(shoppingModelMapper.map(storeEntity.getUser(), UserDto.class));
+            dto.setImage(storeEntity.getIngredient().getImage());
+            dto.setName(storeEntity.getIngredient().getName());
+            dto.setQuantitystore(storeEntity.getQuantity().intValue());
+            dto.setAttributes(new ArrayList<>());
+            ShoppingAttributeDto attributeDto = new ShoppingAttributeDto();
+            attributeDto.setId(storeEntity.getId().intValue());
+            attributeDto.setIngredients(shoppingModelMapper.map(storeEntity.getIngredient(), IngredientsDto.class));
+            attributeDto.setMeasure(storeEntity.getMeasure());
+            attributeDto.setQuantity(storeEntity.getQuantity());
+            attributeDto.setExprided(storeEntity.getExpridedAt());
+            attributeDto.setBuyAt(storeEntity.getBuyAt());
+            attributeDto.setStatusstore(true);
+            attributeDto.setStatusbuy(true);
+            attributeDto.setIngredientId(storeEntity.getIngredient().getId().intValue());
+            attributeDto.setIngredientStatus(storeEntity.getIngredient().getIngredientStatus());
+            attributeDto.setName(storeEntity.getIngredient().getName());
+            dto.getAttributes().add(attributeDto);
+            dtoList.add(dto);
         }
-
-        // Lấy thông tin user một lần để tránh truy vấn nhiều lần
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy người dùng với ID: " + userId));
-        UserDto userDto = shoppingModelMapper.map(user, UserDto.class);
-
-        // Lọc và chuyển đổi tất cả các entity có statusstore = true
-        for (ShoppingAttributeEntity entity : entities) {
-            if (Boolean.TRUE.equals(entity.getStatusstore())) {
-                // Lấy thông tin ingredient một lần
-                java.util.Optional<IngredientsEntity> ingredientOpt = ingredientsRepository
-                        .findById(entity.getIngredientsId());
-
-                if (ingredientOpt.isPresent()) {
-                    IngredientsEntity ingredient = ingredientOpt.get();
-
-                    // Tạo IngredientsDto
-                    IngredientsDto ingredientsDto = shoppingModelMapper.map(ingredient, IngredientsDto.class);
-
-                    // Tạo ShoppingAttributeDto
-                    ShoppingAttributeDto attributeDto = new ShoppingAttributeDto();
-                    attributeDto.setId(entity.getId());
-                    attributeDto.setUser(userDto);
-                    attributeDto.setIngredients(ingredientsDto);
-                    attributeDto.setShoppingId(entity.getShoppingId());
-                    attributeDto.setStatus(entity.getStatus());
-                    attributeDto.setIngredientId(entity.getIngredientsId());
-                    attributeDto.setExprided(entity.getExprided());
-                    attributeDto.setMeasure(entity.getMeasure());
-                    attributeDto.setBuyAt(entity.getBuyAt());
-                    attributeDto.setQuantitystore(entity.getQuantitystore());
-                    attributeDto.setStatusstore(entity.getStatusstore());
-                    attributeDto.setStatusbuy(entity.getStatusbuy()); // Nếu có field này
-                    attributeDto.setIngredientStatus(ingredient.getIngredientStatus());
-                    attributeDto.setImage(ingredient.getImage());
-                    attributeDto.setName(ingredient.getName());
-
-                    // Khởi tạo ShoppingDto chính
-                    ShoppingDto dto = new ShoppingDto();
-                    dto.setUser(userDto);
-                    dto.setCreateAt(entity.getBuyAt());
-                    dto.setStatusstore(entity.getStatusstore());
-                    dto.setQuantitystore(entity.getQuantitystore());
-                    dto.setImage(ingredient.getImage());
-                    dto.setName(ingredient.getName());
-
-                    // Thêm attribute vào list (nếu cần thiết)
-                    List<ShoppingAttributeDto> attributesList = new ArrayList<>();
-                    attributesList.add(attributeDto);
-                    dto.setAttributes(attributesList);
-                    dtoList.add(dto);
-                } else {
-                    System.out.println("Warning: Ingredient not found for ID: " + entity.getIngredientsId());
-                }
-            }
-        }
-
         if (dtoList.isEmpty()) {
-            throw new NotFoundException(
-                    "Không tìm thấy nguyên liệu nào có trạng thái lưu trữ của người dùng với ID: " + userId);
+            throw new NotFoundException("Không tìm thấy dữ liệu trong kho của người dùng với ID: " + userId);
         }
-
         return dtoList;
     }
 

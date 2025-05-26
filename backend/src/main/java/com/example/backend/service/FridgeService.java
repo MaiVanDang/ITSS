@@ -130,10 +130,11 @@ public class FridgeService {
         FridgeIngredientsEntity oldEntity = fridgeIngredientsRepository
                 .findByExpridedAndFridgeIdAndIngredientsId(
                         newExpiryDate, fridgeId, ingredientId);
+
         ShoppingAttributeEntity shoppingAttributeEntity = shoppingAttributeRepository.findById(shoppingAttributeId)
                 .get();
+
         shoppingAttributeEntity.setStatusstore(false);
-        shoppingAttributeEntity.setQuantitystore(0);
         shoppingAttributeRepository.save(shoppingAttributeEntity);
 
         if (oldEntity != null) {

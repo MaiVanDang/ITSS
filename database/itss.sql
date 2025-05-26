@@ -139,3 +139,15 @@ ADD statusstore BOOLEAN DEFAULT FALSE;
 
 ALTER TABLE shopping_attribute
 ADD quantitystore INTEGER DEFAULT 0;
+
+CREATE TABLE store (
+    id SERIAL PRIMARY KEY,
+    ingredients_id INT,
+    user_id INT,
+    quantity DECIMAL(10,2),
+    buy_at TIMESTAMP,
+    expired_at TIMESTAMP,
+    measure VARCHAR(10),
+    FOREIGN KEY (ingredients_id) REFERENCES ingredients(id),
+    FOREIGN KEY (user_id) REFERENCES user(id)
+);

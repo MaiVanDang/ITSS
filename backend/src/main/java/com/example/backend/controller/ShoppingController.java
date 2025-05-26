@@ -3,12 +3,14 @@ package com.example.backend.controller;
 import com.example.backend.dtos.ShoppingDto;
 import com.example.backend.service.ShoppingService;
 
-import jakarta.persistence.criteria.CriteriaBuilder.In;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -66,30 +68,52 @@ public class ShoppingController {
     }
 
     @PutMapping("/market/active")
-    public String updateShoppingAttribute(
+    public ResponseEntity<String> updateShoppingAttribute(
             @RequestBody Map<String, Object> request) {
-        Integer id = (Integer) request.get("id");
-        Integer attributeId = (Integer) request.get("attributeId");
-        String measure = (String) request.get("measure");
-        Integer quantity = (Integer) request.get("quantity");
-        shoppingService.updateShoppingAttribute(id, attributeId, measure, quantity);
-        return "success";
+        try {
+            // Validate required fields
+            if (!request.containsKey("id") || request.get("id") == null) {
+                return ResponseEntity.badRequest().body("Missing required field: id");
+            }
+            if (!request.containsKey("attributeId") || request.get("attributeId") == null) {
+                return ResponseEntity.badRequest().body("Missing required field: attributeId");
+            }
+
+            Integer id = (Integer) request.get("id");
+            Integer attributeId = (Integer) request.get("attributeId");
+            String measure = (String) request.get("measure");
+            Integer quantity = (Integer) request.get("quantity");
+
+            // Safe date parsing with null checks
+            LocalDate buyAt = null;
+            LocalDate exprided = null;
+
+            String buyAtStr = (String) request.get("buyAt");
+            if (buyAtStr != null && !buyAtStr.trim().isEmpty()) {
+                buyAt = LocalDate.parse(buyAtStr);
+            }
+
+            String expridedStr = (String) request.get("exprided");
+            if (expridedStr != null && !expridedStr.trim().isEmpty()) {
+                exprided = LocalDate.parse(expridedStr);
+            }
+
+            shoppingService.updateShoppingAttribute(id, attributeId, measure, quantity, buyAt, exprided);
+            return ResponseEntity.ok("success");
+
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body("Invalid date format. Use YYYY-MM-DD format.");
+        } catch (ClassCastException e) {
+            return ResponseEntity.badRequest().body("Invalid data type in request.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while updating shopping attribute.");
+        }
     }
 
-    @PutMapping("/market/remove")
-    public String removeShoppingAttribute(
-            @RequestBody Map<String, Object> request) {
-        Integer id = (Integer) request.get("id");
-        Integer attributeId = (Integer) request.get("attributeId");
-        String measure = (String) request.get("measure");
-        Integer quantity = (Integer) request.get("quantity");
-        shoppingService.removeUpdateShoppingAttribute(id, attributeId, measure, quantity);
-        return "success";
-    }
-
-    @DeleteMapping("/market/{id}")
-    public String deleteShopping(@PathVariable Integer id) {
-        shoppingService.deleteShopping(id);
+    @DeleteMapping("/market/{orderId}")
+    public String deleteShopping(@PathVariable Integer orderId) {
+        shoppingService.deleteShopping(orderId);
         return "success";
     }
 

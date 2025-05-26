@@ -59,32 +59,44 @@ function ModalDetailMarketOrder({
         ingredientId: number,
         measure: string,
         quantity: number,
+        buyAt?: string,
+        exprided?: string,
     ) => {
-
-        if (status === 1) {
-            try {
-                await axios.put(Url(`market/remove`), {
-                    id: indexOrder,
-                    attributeId: ingredientId,
-                    measure,
-                    quantity,
-                });
-                setReload(Math.random());
-            } catch (error) {
-                console.log(error);
-            }
-        }
         if (status === 0) {
+            const isConfirmed = window.confirm(
+                'Bạn có chắc chắn mua nguyên liệu này không! Nếu đã mua rồi thì không thể xóa đi mua lại!'
+            );
+            
+            if (!isConfirmed) {
+                return;
+            }
+
             try {
+                // Tính toán ngày mua và ngày hết hạn
+                const currentDate = new Date();
+                const buyDate = buyAt || currentDate.toISOString().split('T')[0]; // Ngày hôm nay nếu chưa có
+                
+                // Tính ngày hết hạn (ví dụ: 7 ngày sau ngày mua cho nguyên liệu tươi)
+                const expirationDate = exprided || (() => {
+                    const expDate = new Date(currentDate);
+                    expDate.setDate(expDate.getDate() + 7); // Mặc định 7 ngày
+                    return expDate.toISOString().split('T')[0];
+                })();
+
                 await axios.put(Url(`market/active`), {
                     id: indexOrder,
                     attributeId: ingredientId,
                     measure,
                     quantity,
+                    buyAt: buyDate,
+                    exprided: expirationDate,
                 });
+                
                 setReload(Math.random());
+                showToastMessage('success', 'Đã đánh dấu mua thành công');
             } catch (error) {
                 console.log(error);
+                showToastMessage('danger', 'Có lỗi xảy ra khi cập nhật trạng thái mua');
             }
         }
     };
@@ -382,8 +394,11 @@ function ModalDetailMarketOrder({
                                                                 attribute.status,
                                                                 attribute.ingredients.id,
                                                                 attribute.measure,
-                                                                1,
+                                                                attribute.quantity,
+                                                                attribute.buyAt,
+                                                                attribute.exprided,
                                                             )
+
                                                         }
                                                     />
                                                 </td>
@@ -477,12 +492,14 @@ function ModalDetailMarketOrder({
                 <Toast.Header>
                     <strong className="me-auto">
                         {toastType === 'success' ? 'Thành công' : 
-                         toastType === 'danger' ? 'Cảnh báo' : 'Lưu ý'}
+                         toastType === 'danger' ? 'Cảnh báo' : 
+                         toastType === 'info' ? 'Thông tin' : 'Lưu ý'}
                     </strong>
                 </Toast.Header>
                 <Toast.Body className={
                     toastType === 'success' ? 'bg-light' : 
-                    toastType === 'danger' ? 'text-white' : 'text-dark'
+                    toastType === 'danger' ? 'text-white' : 
+                    toastType === 'info' ? 'text-white' : 'text-dark'
                 }>
                     {toastMessage}
                 </Toast.Body>
