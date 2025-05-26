@@ -21,6 +21,7 @@ public class FridgeService {
     private final GroupRepository groupRepository;
     private final FridgeRepository fridgeRepository;
     private final ShoppingAttributeRepository shoppingAttributeRepository;
+    private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final FridgeIngredientsRepository fridgeIngredientsRepository;
     private final IngredientsRepository ingredientRepository;
@@ -117,39 +118,36 @@ public class FridgeService {
         fridgeRepository.save(newFridgeEntity);
     }
 
-    public void addIngredients(Integer ingredientId, Integer fridgeId, Integer quantity, String measure,
-            LocalDate expired, Integer shoppingAttributeId) {
+    public void addIngredientsFromStore(StoreDto storeDto, Integer fridgeId) {
 
-        // Lấy thông tin nguyên liệu
-        IngredientsEntity ingredientsEntity = ingredientRepository.findById(ingredientId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nguyên liệu với ID: " + ingredientId));
-
-        // Tính toán hạn sử dụng mới
-        LocalDate newExpiryDate = calculateNewExpiryDate(expired, ingredientsEntity);
-        // Kiểm tra xem nguyên liệu đã có trong tủ lạnh
-        FridgeIngredientsEntity oldEntity = fridgeIngredientsRepository
-                .findByExpridedAndFridgeIdAndIngredientsId(
-                        newExpiryDate, fridgeId, ingredientId);
-
-        ShoppingAttributeEntity shoppingAttributeEntity = shoppingAttributeRepository.findById(shoppingAttributeId)
-                .get();
-
-        shoppingAttributeEntity.setStatusstore(false);
-        shoppingAttributeRepository.save(shoppingAttributeEntity);
-
-        if (oldEntity != null) {
-            oldEntity.setQuantity(oldEntity.getQuantity() + quantity);
-            fridgeIngredientsRepository.save(oldEntity);
+        IngredientsEntity ingredient = ingredientRepository.findById(storeDto.getIngredientsId()).get();
+        LocalDate newExpridedAt = calculateNewExpiryDate(storeDto.getExpridedAt(), ingredient);
+        FridgeIngredientsEntity oldFridgeIngredientsEntity = fridgeIngredientsRepository
+                .findByExpridedAndFridgeIdAndIngredientsId(newExpridedAt, fridgeId, storeDto.getIngredientsId());
+        if (oldFridgeIngredientsEntity != null) {
+            // Nếu nguyên liệu đã tồn tại trong tủ lạnh, cộng dồn số lượng
+            oldFridgeIngredientsEntity
+                    .setQuantity(oldFridgeIngredientsEntity.getQuantity() + storeDto.getQuantity().intValue());
+            fridgeIngredientsRepository.save(oldFridgeIngredientsEntity);
         } else {
-            FridgeIngredientsEntity ingredientEntity = new FridgeIngredientsEntity();
-            ingredientEntity.setIngredientsId(ingredientId);
-            ingredientEntity.setFridgeId(fridgeId);
-            ingredientEntity.setQuantity(quantity);
-            ingredientEntity.setMeasure(measure);
-            ingredientEntity.setCreateAt(LocalDate.now());
-            ingredientEntity.setExprided(newExpiryDate);
-            fridgeIngredientsRepository.save(ingredientEntity);
+            // Nếu nguyên liệu chưa tồn tại, tạo mới
+            FridgeIngredientsEntity newFridgeIngredient = new FridgeIngredientsEntity();
+            newFridgeIngredient.setIngredientsId(storeDto.getIngredientsId());
+            newFridgeIngredient.setFridgeId(fridgeId);
+            newFridgeIngredient.setQuantity(storeDto.getQuantity().intValue());
+            newFridgeIngredient.setMeasure(storeDto.getMeasure());
+            newFridgeIngredient.setExprided(newExpridedAt);
+            newFridgeIngredient.setCreateAt(now());
+            fridgeIngredientsRepository.save(newFridgeIngredient);
         }
+        // Cập nhật số lượng trong kho
+        StoreEntity storeEntity = storeRepository.findByIngredientsIdAndBuyAtAndExpridedAt(
+                storeDto.getIngredientsId(),
+                storeDto.getBuyAt(),
+                storeDto.getExpridedAt());
+
+        storeRepository.delete(storeEntity);
+
     }
 
     /**

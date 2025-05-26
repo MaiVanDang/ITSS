@@ -1,7 +1,7 @@
 package com.example.backend.dtos;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import lombok.Data;
 import lombok.Getter;
@@ -11,13 +11,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class StoreDto {
-    private Long id;
-    private Long ingredientsId;
-    private Long userId;
+    private Integer storeId;
+    private Integer ingredientsId;
+    private Integer userId;
     private BigDecimal quantity;
-    private LocalDateTime buyAt;
-    private LocalDateTime expiredAt;
+    private LocalDate buyAt;
+    private LocalDate expridedAt;
     private String measure;
     private String ingredientName;
     private String userName;
+    private String ingredientImage;
+    private String ingredientStatus;
 }

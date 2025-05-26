@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.dtos.ShoppingDto;
+import com.example.backend.dtos.StoreDto;
 import com.example.backend.service.ShoppingService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,10 +118,9 @@ public class ShoppingController {
         return "success";
     }
 
-    @GetMapping("/market/purchased-items/{id}")
-    public List<ShoppingDto> getAllShoppingByUser(@PathVariable Integer id) {
-        List<ShoppingDto> response = shoppingService.getDetailUserStore(id);
-
+    @GetMapping("/market/purchased-items/{userId}")
+    public List<StoreDto> getAllShoppingByUser(@PathVariable Integer userId) {
+        List<StoreDto> response = shoppingService.getDetailUserStore(userId);
         return response;
     }
 }

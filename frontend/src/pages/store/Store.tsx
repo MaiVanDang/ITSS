@@ -7,32 +7,22 @@ import Url from '../../utils/url';
 import { userInfo } from '../../utils/userInfo';
 import './Store.css';
 
-interface ShoppingAttributeDto {
+interface StoreProps {
     id: number;
-    measure: string;
-    buyAt: string;
-    exprided: string;
+    ingredientsId: number;
+    ingredientName: string;
+    ingredientImage: string;
     ingredientStatus: string;
-    ingredientId: number;
-}
-
-interface PurchasedItem {
-    id: number;
-    image: string;
-    name: string;
-    quantitystore: number;
-    statusstore: boolean;
-    user: {
-        id: number;
-        name: string;
-    };
-    orderId: number;
-    orderCode: string;
-    attributes: ShoppingAttributeDto[];
+    userId:number;
+    userName: string;
+    measure: string;
+    quantity : number;
+    buyAt: string;
+    expridedAt: string;
 }
 
 function Store() {
-    const [purchasedItems, setPurchasedItems] = useState<PurchasedItem[]>([]);
+    const [purchasedItems, setPurchasedItems] = useState<StoreProps[]>([]);
     const [loading, setLoading] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
@@ -65,7 +55,7 @@ function Store() {
         }
     };
 
-    const calculateExpiryStatus = (buyAt?: string, exprided?: string) => {
+    const calculateExpiryStatus = (exprided?: string) => {
         try {
             if (!exprided) return { status: "Không xác định", style: {}, daysLeft: null, tooltipText: "Không xác định ngày hết hạn" };
             const expiredDate = new Date(exprided);
@@ -108,10 +98,9 @@ function Store() {
         setShowToast(true);
     };
 
-    const handleAddToFridge = async (item: PurchasedItem) => {
-        const attr = item.attributes?.[0];
-        if (!attr) {
-            showToastMessage('danger', 'Không có thông tin nguyên liệu để thêm vào tủ lạnh.');
+    const handleAddFromStoreToFridge = async (item: StoreProps) => {
+        if (item === null || item === undefined) {
+            showToastMessage('danger', 'Không có thông tin thực phẩm để thêm vào tủ lạnh.');
             return;
         }
 
@@ -122,17 +111,18 @@ function Store() {
             return;
         }
 
-        if (isExpired(attr.exprided)) {
-            showToastMessage('danger', `${item.name} đã hết hạn (${attr.exprided}).`);
+
+        if (isExpired(item.expridedAt)) {
+            showToastMessage('danger', `${item.ingredientName} đã hết hạn (${item.expridedAt}}).`);
             return;
         }
 
-        if (attr.ingredientStatus === 'SEASONING') {
+        if (item.ingredientStatus === 'SEASONING') {
             showToastMessage('warning', 'Gia vị nêm không cần thêm vào tủ lạnh.');
             return;
         }
 
-        if (item.name.trim() === "Gạo") {
+        if (item.ingredientName.trim() === "Gạo") {
             showToastMessage('warning', 'Gạo không cần thêm vào tủ lạnh.');
             return;
         }
@@ -140,20 +130,20 @@ function Store() {
         try {
             const requestData = {
                 fridgeId: userInfo.fridgeId,
-                ingredientId: attr.ingredientId,
-                quantity: item.quantitystore,
-                measure: attr.measure,
-                exprided: attr.exprided,
-                shoppingAttributeId: attr.id,
+                ingredientsId: item.ingredientsId,
+                quantity: item.quantity,
+                measure: item.measure,
+                exprided: item.expridedAt,
+                buyAt: item.buyAt,
+                ingredientName: item.ingredientName,
+                ingredientImage: item.ingredientImage,
+                ingredientStatus: item.ingredientStatus,
             };
+            console.log('Request data to add to fridge:', requestData);
 
-            console.log('Sending request to add ingredient:', requestData);
-            console.log('Item data:', item);
-            console.log('Attribute data:', attr);
+            await axios.post(Url(`fridge/store/ingredients`), requestData);
 
-            await axios.post(Url(`fridge/ingredients`), requestData);
-
-            showToastMessage('success', `Đã thêm ${item.name} vào tủ lạnh!`);
+            showToastMessage('success', `Đã thêm ${item.ingredientName} vào tủ lạnh!`);
             fetchPurchasedItems();
         } catch (error: any) {
             console.error('Lỗi khi thêm vào tủ lạnh:', error);
@@ -185,7 +175,7 @@ function Store() {
         }
     };
 
-    // ✅ THÊM DEBUG INFO CHO USERINFO
+    
     useEffect(() => {
         console.log('Current userInfo:', userInfo);
         console.log('fridgeId:', userInfo?.fridgeId);
@@ -214,7 +204,7 @@ function Store() {
                 </Button>
             </div>
 
-            {/* ✅ THÊM DEBUG INFO CHO USER */}
+            {/*THÊM DEBUG INFO CHO USER */}
             {!userInfo?.fridgeId && (
                 <div className="alert alert-warning">
                     <strong>Cảnh báo:</strong> Không tìm thấy thông tin tủ lạnh. 
@@ -249,27 +239,25 @@ function Store() {
                     </thead>
                     <tbody>
                         {purchasedItems.map((item, index) => {
-                            const attr = item.attributes?.[0];
-                            const { status, style, tooltipText } = calculateExpiryStatus(attr?.buyAt, attr?.exprided);
+                            const { status, style, tooltipText } = calculateExpiryStatus(item.expridedAt);
 
                             return (
                                 <tr key={`${item.id}-${index}`} style={style} title={tooltipText}>
                                     <td>{index + 1}</td>
                                     <td>
                                         <img
-                                            src={item.image}
-                                            alt={item.name}
-                                            style={{ height: '3rem', width: '3rem', objectFit: 'cover' }}
-                                            className="rounded"
+                                            src={item.ingredientImage}
+                                            alt="anh"
+                                            style={{ height: '3rem', width: '3rem' }}
                                         />
                                     </td>
-                                    <td><strong>{item.name}</strong></td>
-                                    <td>{item.quantitystore}</td>
-                                    <td>{attr?.measure || 'Không rõ'}</td>
-                                    <td>{renderIngredientType(attr?.ingredientStatus)}</td>
-                                    <td><Badge bg="info">{item.user.name}</Badge></td>
-                                    <td>{attr?.buyAt || 'Chưa cập nhật'}</td>
-                                    <td>{attr?.exprided || 'Chưa có'}</td>
+                                    <td><strong>{item.ingredientName}</strong></td>
+                                    <td>{item.quantity}</td>
+                                    <td>{item.measure || 'Không rõ'}</td>
+                                    <td>{renderIngredientType(item.ingredientStatus)}</td>
+                                    <td><Badge bg="info">{item.userName}</Badge></td>
+                                    <td>{item?.buyAt || 'Chưa cập nhật'}</td>
+                                    <td>{item?.expridedAt || 'Chưa có'}</td>
                                     <td>
                                         <Badge 
                                             bg={
@@ -285,15 +273,15 @@ function Store() {
                                     <td className="text-center">
                                         <Button
                                             variant={
-                                                isExpired(attr?.exprided) ? "outline-danger" : 
+                                                isExpired(item?.expridedAt) ? "outline-danger" : 
                                                 !userInfo?.fridgeId ? "outline-secondary" :
                                                 "outline-success"
                                             }
                                             size="sm"
-                                            onClick={() => handleAddToFridge(item)}
-                                            disabled={isExpired(attr?.exprided) || !userInfo?.fridgeId}
+                                            onClick={() => handleAddFromStoreToFridge(item)}
+                                            disabled={isExpired(item?.expridedAt) || !userInfo?.fridgeId}
                                             title={
-                                                isExpired(attr?.exprided) 
+                                                isExpired(item?.expridedAt) 
                                                     ? "Không thể thêm thực phẩm hết hạn vào tủ lạnh"
                                                     : !userInfo?.fridgeId
                                                     ? "Không tìm thấy thông tin tủ lạnh"
@@ -303,7 +291,7 @@ function Store() {
                                             <FontAwesomeIcon 
                                                 icon={faCheckCircle} 
                                                 className={
-                                                    isExpired(attr?.exprided) ? "text-danger" : 
+                                                    isExpired(item?.expridedAt) ? "text-danger" : 
                                                     !userInfo?.fridgeId ? "text-secondary" :
                                                     "text-success"
                                                 }

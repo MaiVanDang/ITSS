@@ -260,8 +260,8 @@ public class ShoppingService {
             } else {
                 // Nếu chưa có trong bảng store, tạo mới
                 StoreEntity storeEntity = new StoreEntity();
-                storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
-                storeEntity.setUserId(attributeEntity.getUserId());
+                // storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
+                // storeEntity.setUserId(attributeEntity.getUserId());
                 storeEntity.setQuantity(BigDecimal.valueOf(quantity));
                 storeEntity.setBuyAt(buyAt);
                 storeEntity.setExpridedAt(exprided);
@@ -388,36 +388,21 @@ public class ShoppingService {
         return attributeRepository.findDistinctMeasure();
     }
 
-    public List<ShoppingDto> getDetailUserStore(Integer userId) {
+    public List<StoreDto> getDetailUserStore(Integer userId) {
+        List<StoreDto> storeDtos = new ArrayList<>();
         List<StoreEntity> storeEntities = storeRepository.findByUserId(userId);
-        List<ShoppingDto> dtoList = new ArrayList<>();
         for (StoreEntity storeEntity : storeEntities) {
-            ShoppingDto dto = new ShoppingDto();
-            dto.setId(storeEntity.getId());
-            dto.setUser(shoppingModelMapper.map(storeEntity.getUser(), UserDto.class));
-            dto.setImage(storeEntity.getIngredient().getImage());
-            dto.setName(storeEntity.getIngredient().getName());
-            dto.setQuantitystore(storeEntity.getQuantity().intValue());
-            dto.setAttributes(new ArrayList<>());
-            ShoppingAttributeDto attributeDto = new ShoppingAttributeDto();
-            attributeDto.setId(storeEntity.getId().intValue());
-            attributeDto.setIngredients(shoppingModelMapper.map(storeEntity.getIngredient(), IngredientsDto.class));
-            attributeDto.setMeasure(storeEntity.getMeasure());
-            attributeDto.setQuantity(storeEntity.getQuantity());
-            attributeDto.setExprided(storeEntity.getExpridedAt());
-            attributeDto.setBuyAt(storeEntity.getBuyAt());
-            attributeDto.setStatusstore(true);
-            attributeDto.setStatusbuy(true);
-            attributeDto.setIngredientId(storeEntity.getIngredient().getId().intValue());
-            attributeDto.setIngredientStatus(storeEntity.getIngredient().getIngredientStatus());
-            attributeDto.setName(storeEntity.getIngredient().getName());
-            dto.getAttributes().add(attributeDto);
-            dtoList.add(dto);
+            StoreDto storeDto = shoppingModelMapper.map(storeEntity, StoreDto.class);
+            IngredientsEntity ingredientsEntity = ingredientsRepository.findById(storeEntity.getIngredient().getId())
+                    .get();
+            storeDto.setIngredientName(ingredientsEntity.getName());
+            storeDto.setIngredientStatus(ingredientsEntity.getIngredientStatus());
+            storeDto.setIngredientImage(ingredientsEntity.getImage());
+            UserEntity userEntity = userRepository.findById(storeEntity.getUser().getId()).get();
+            storeDto.setUserName(userEntity.getName());
+            storeDtos.add(storeDto);
         }
-        if (dtoList.isEmpty()) {
-            throw new NotFoundException("Không tìm thấy dữ liệu trong kho của người dùng với ID: " + userId);
-        }
-        return dtoList;
+        return storeDtos;
     }
 
 }

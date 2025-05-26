@@ -1,11 +1,14 @@
 package com.example.backend.controller;
 
 import com.example.backend.dtos.FridgeDto;
+import com.example.backend.dtos.StoreDto;
 import com.example.backend.service.FridgeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ssl.JksSslBundleProperties.Store;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -48,37 +51,60 @@ public class FridgeController {
 
     }
 
-    @PostMapping("/fridge/ingredients")
-    public String addNewIngredient(@RequestBody Map<String, Object> request) {
+    @PostMapping("/fridge/store/ingredients")
+    public String addNewIngredientFromStore(@RequestBody Map<String, Object> request) {
 
         // Extract and validate each field individually
         Object fridgeIdObj = request.get("fridgeId");
-        Object ingredientIdObj = request.get("ingredientId");
+        Object ingredientsIdObj = request.get("ingredientsId");
+        Object ingredientNameObj = request.get("ingredientName");
+        Object ingredientImageObj = request.get("ingredientImage");
+        Object ingredientStatusObj = request.get("ingredientStatus");
         Object quantityObj = request.get("quantity");
         Object measureObj = request.get("measure");
         Object expridedObj = request.get("exprided");
-        Object ShoppingAttributeIdObj = request.get("shoppingAttributeId");
+        Object buyAtObject = request.get("buyAt");
 
         Integer fridgeId = (fridgeIdObj instanceof Number) ? ((Number) fridgeIdObj).intValue() : null;
-        Integer ingredientId = (ingredientIdObj instanceof Number) ? ((Number) ingredientIdObj).intValue() : null;
-        Integer quantity = (quantityObj instanceof Number) ? ((Number) quantityObj).intValue() : null;
-        String measure = (measureObj instanceof String) ? (String) measureObj : null;
-        Integer shoppingAttributeId = (ShoppingAttributeIdObj instanceof Number)
-                ? ((Number) ShoppingAttributeIdObj).intValue()
+        Integer ingredientId = (ingredientsIdObj instanceof Number) ? ((Number) ingredientsIdObj).intValue() : null;
+        String ingredientName = (ingredientNameObj instanceof String) ? (String) ingredientNameObj : null;
+        String ingredientImage = (ingredientImageObj instanceof String) ? (String) ingredientImageObj : null;
+        String ingredientStatus = (ingredientStatusObj instanceof String) ? (String) ingredientStatusObj : null;
+        BigDecimal quantity = (quantityObj instanceof Number) ? BigDecimal.valueOf(((Number) quantityObj).doubleValue())
                 : null;
+        String measure = (measureObj instanceof String) ? (String) measureObj : null;
+        LocalDate expridedWhenShopping = (expridedObj instanceof String) ? LocalDate.parse((String) expridedObj) : null;
+        LocalDate buyAt = (buyAtObject instanceof String) ? LocalDate.parse((String) buyAtObject) : null;
 
-        System.out.println("fridgeId: " + fridgeId);
-        System.out.println("ingredientId: " + ingredientId);
-        System.out.println("quantity: " + quantity);
-        System.out.println("measure: " + measure);
-        System.out.println("shoppingAttributeId: " + shoppingAttributeId);
-        // Special handling for date
-        LocalDate expridedWhenShopping = LocalDate.parse(expridedObj.toString());
+        StoreDto storeDto = new StoreDto();
+        storeDto.setIngredientsId(ingredientId);
+        storeDto.setIngredientName(ingredientName);
+        storeDto.setIngredientImage(ingredientImage);
+        storeDto.setIngredientStatus(ingredientStatus);
+        storeDto.setQuantity(quantity);
+        storeDto.setMeasure(measure);
+        storeDto.setExpridedAt(expridedWhenShopping);
+        storeDto.setBuyAt(buyAt);
 
-        fridgeService.addIngredients(ingredientId, fridgeId, quantity, measure, expridedWhenShopping,
-                shoppingAttributeId);
+        fridgeService.addIngredientsFromStore(storeDto, fridgeId);
         return "success";
     }
+
+    // @PostMapping("/fridge/ingredients")
+    // public String addIngredient(@RequestBody Map<String, Object> request) {
+    // Integer fridgeId = (Integer) request.get("fridgeId");
+    // Integer ingredientId = (Integer) request.get("ingredientId");
+    // Integer quantity = (Integer) request.get("quantity");
+    // String measure = (String) request.get("measure");
+    // LocalDate expridedWhenShopping =
+    // LocalDate.parse(request.get("exprided").toString());
+    // Integer shoppingAttributeId = (Integer) request.get("shoppingAttributeId");
+
+    // fridgeService.addIngredientsFromStore(ingredientId, fridgeId, quantity,
+    // measure, expridedWhenShopping,
+    // shoppingAttributeId);
+    // return "success";
+    // }
 
     @DeleteMapping("/fridge/ingredients/{id}")
     public String autoDeleteIngredient(@PathVariable Integer id) {
