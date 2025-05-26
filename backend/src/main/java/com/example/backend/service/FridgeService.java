@@ -20,7 +20,6 @@ import static java.time.LocalDate.now;
 public class FridgeService {
     private final GroupRepository groupRepository;
     private final FridgeRepository fridgeRepository;
-    private final ShoppingAttributeRepository shoppingAttributeRepository;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final FridgeIngredientsRepository fridgeIngredientsRepository;

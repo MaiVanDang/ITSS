@@ -4,7 +4,6 @@ import com.example.backend.dtos.FridgeDto;
 import com.example.backend.dtos.StoreDto;
 import com.example.backend.service.FridgeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.ssl.JksSslBundleProperties.Store;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
