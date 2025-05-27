@@ -110,13 +110,16 @@ export interface fridgeProps {
     ingredients: ingredientsProps[];
 }
 
-export interface storeProps {
-    id?: number;
-    ingredient: ingredientProps;
-    quantity: number;
+export interface StoreProps {
+    id: number;
+    ingredientsId: number;
+    ingredientName: string;
+    ingredientImage: string;
+    ingredientStatus: string;
+    userId:number;
+    userName: string;
     measure: string;
-    exprided?: string;
-    createAt?: string;
-    status?: number;
-    image?: string;
+    quantity : number;
+    buyAt: string;
+    expridedAt: string;
 }

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Url from "../../utils/url";
 import { Badge, Button, Table } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faRotateLeft, faTrashCan, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faRotateLeft, faTrashCan, faHeart, faUtensils } from "@fortawesome/free-solid-svg-icons";
 import ModalDeleteDish from '../../components/modal/ModalDeleteDish';
 import ModalDetailDish from '../../components/modal/ModalDetailDish';
 import { dishsProps } from '../../utils/interface/Interface';
@@ -109,9 +109,13 @@ function Cook(){
     );
     
     return (
-        <div className="position-relative">
+        <div className="position-relative px-3">
+            <h2>
+                <FontAwesomeIcon icon={faUtensils} className="me-2" />
+                    Kho thực phẩm đã lưu trữ
+            </h2>
             <Search />
-            <div className="overflow-y-scroll" style={{ height: '92vh' }}>
+            <div className="overflow-y-scroll" style={{ height: '82vh' }}>
                 {isLoading ? (
                     renderLoading()
                 ) : error ? (
@@ -119,28 +123,33 @@ function Cook(){
                 ) : lishDishs.length === 0 ? (
                     renderEmptyList()
                 ) : (
-                    <Table hover bordered>
-                        <thead className="fs-5 ">
+                    <Table hover bordered className="mt-3">
+                        <thead className="text-center sticky-top table-dark">
                             <tr>
-                                <th>STT</th>
-                                <th>Ảnh</th>
-                                <th>Tên món ăn</th>
-                                <th>Trạng thái</th>
-                                <th>Kiểu món ăn</th>
-                                <th>Ngày tạo</th>
-                                <th>Xóa</th>
-                                <th></th>
+                                <th className="sticky-top border-bottom">STT</th>
+                                <th className="sticky-top border-bottom">Ảnh</th>
+                                <th className="sticky-top border-bottom">Tên món ăn</th>
+                                <th className="sticky-top border-bottom">Trạng thái</th>
+                                <th className="sticky-top border-bottom">Kiểu món ăn</th>
+                                <th className="sticky-top border-bottom">Ngày tạo</th>
+                                <th className="sticky-top border-bottom">Xóa / Khôi phục</th>
+                                <th className="sticky-top border-bottom">Yêu thích</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {lishDishs.map((dish : dishsProps, index : number) => (
-                                <tr key={index}>
-                                    <td>{index + 1}</td>
-                                    <td>
+                            {lishDishs.map((dish, index) => (
+                                <tr key={index} style={{ verticalAlign: 'middle' }}>
+                                    <td className="text-center">{index + 1}</td>
+                                    <td className="text-center">
                                         <img
                                             src={dish.image}
                                             alt="anh"
-                                            style={{ width: '3rem', height: '3rem' }}
+                                            style={{
+                                                width: '3rem',
+                                                height: '3rem',
+                                                objectFit: 'cover',
+                                                borderRadius: '0.5rem',
+                                            }}
                                         />
                                     </td>
                                     <td
@@ -148,11 +157,11 @@ function Cook(){
                                             setIndexCurrentDish(dish.id);
                                             setShowModalDetailDish(true);
                                         }}
-                                        style={{ cursor: 'pointer' }}
+                                        style={{ cursor: 'pointer', fontWeight: '500' }}
                                     >
                                         {dish.name}
                                     </td>
-                                    <td>
+                                    <td className="text-center">
                                         {dish.status === 1 ? (
                                             <Badge pill bg="success">
                                                 Sẵn sàng đặt món
@@ -163,16 +172,16 @@ function Cook(){
                                             </Badge>
                                         )}
                                     </td>
-                                    <td>{dish.type}</td>
-                                    <td>{dish.createAt}</td>
-                                    <td>
+                                    <td className="text-center">{dish.type}</td>
+                                    <td className="text-center">{dish.createAt}</td>
+                                    <td className="text-center">
                                         {dish.status === 1 ? (
                                             <div
                                                 onClick={() => {
                                                     setCurrentDish(dish);
                                                     setShowModalModalDeleteDish(true);
                                                 }}
-                                                style={{ cursor: 'pointer' }}
+                                                style={{ cursor: 'pointer', color: '#dc3545' }}
                                             >
                                                 <FontAwesomeIcon size="lg" icon={faTrashCan} />
                                             </div>
@@ -182,41 +191,24 @@ function Cook(){
                                                     setCurrentDish(dish);
                                                     setShowModalRestoreDish(true);
                                                 }}
-                                                style={{ cursor: 'pointer' }}
+                                                style={{ cursor: 'pointer', color: '#0d6efd' }}
                                             >
                                                 <FontAwesomeIcon icon={faRotateLeft} />
                                             </div>
                                         )}
                                     </td>
-                                    <td>
-                                        {dish.favorite === 1 ? (
-                                            <div
-                                                onClick={() => {
-                                                    handleFavorite(dish.id, dish.favorite);
-                                                }}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <FontAwesomeIcon
-                                                    size="lg"
-                                                    className="p-1"
-                                                    icon={faHeart}
-                                                    style={{ color: '#d91717' }}
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div
-                                                onClick={() => {
-                                                    handleFavorite(dish.id, dish.favorite);
-                                                }}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <FontAwesomeIcon
-                                                    size="lg"
-                                                    className="p-1"
-                                                    icon={noHeart}
-                                                />
-                                            </div>
-                                        )}
+                                    <td className="text-center">
+                                        <div
+                                            onClick={() => handleFavorite(dish.id, dish.favorite)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <FontAwesomeIcon
+                                                size="lg"
+                                                className="p-1"
+                                                icon={dish.favorite === 1 ? faHeart : noHeart}
+                                                style={{ color: dish.favorite === 1 ? '#d91717' : '#6c757d' }}
+                                            />
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -225,6 +217,7 @@ function Cook(){
                 )}
             </div>
 
+            {/* Modals */}
             <ModalDeleteDish
                 show={showModalDeleteDish}
                 hide={() => setShowModalModalDeleteDish(false)}
@@ -242,11 +235,13 @@ function Cook(){
                     show={showModalDetailDish}
                     hide={() => {
                         setShowModalDetailDish(false);
-                        setIndexCurrentDish(null); // Reset index khi đóng modal
+                        setIndexCurrentDish(null);
                     }}
                     indexOrder={indexCurrentDish}
                 />
             )}
+
+            {/* Nút Thêm món ăn */}
             <Link to="/cook/create" className="position-absolute end-3 bottom-3">
                 <Button
                     title="Thêm món ăn"
@@ -257,7 +252,8 @@ function Cook(){
                 </Button>
             </Link>
         </div>
-    )
+    );
+
 }
 
 export default Cook;

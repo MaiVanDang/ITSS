@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import Url from '../../utils/url';
 import { Badge, Button, Table, Toast } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faShareFromSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faShareFromSquare, faShoppingCart, faStore, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { marketProps } from '../../utils/interface/Interface';
 import { useDispatch, useSelector } from 'react-redux';
 import { isLoginSelector, marketOrderSelector } from '../../redux/selectors';
@@ -14,6 +14,7 @@ import ModalDeleteMarketOrder from '../../components/modal/ModalDeleteMarketOrde
 import ModalDetailMarketOrder from '../../components/modal/ModalDetailMarketOrder';
 import { userInfo } from '../../utils/userInfo';
 import ModalShareMarketOrder from '../../components/modal/ModalShareMarketOrder';
+import { formatDate } from '../../utils/dateHelpers';
 
 function Market() {
     const dispatch = useDispatch();
@@ -194,23 +195,38 @@ const handleShareOrder = async (order: marketProps) => {
 
     return isLogin ? (
         <div className="position-relative">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2>
+                    <FontAwesomeIcon icon={faStore} className="me-2" />
+                    Quản lý đơn đi chợ
+                </h2>
+                <Link to="/market/add">
+                    <Button
+                        title="Tạo đơn đi chợ"
+                        className="btn btn-primary px-4 py-2 rounded-3 shadow-sm"
+                        style={{ fontSize: '1rem' }}
+                    >
+                        <FontAwesomeIcon icon={faPlus} /> Thêm Đơn Hàng
+                    </Button>
+                </Link>
+            </div>
             <div className="mb-3 position-relative ">
                 <SearchMarketOrders />
             </div>
             <div className="overflow-y-scroll" style={{ height: '92vh' }}>
                 <Table hover bordered>
-                    <thead className="fs-5 ">
+                    <thead className="text-center sticky-top table-dark">
                         <tr>
-                            <th>STT</th>
-                            <th>Mã đơn</th>
-                            <th>Người tạo đơn</th>
-                            <th>Trạng thái</th>
-                            <th>Ngày tạo</th>
-                            <th>Xóa đơn</th>
-                            <th>Chia sẻ</th>
+                            <th className="sticky-top border-bottom">STT</th>
+                            <th className="sticky-top border-bottom">Mã đơn</th>
+                            <th className="sticky-top border-bottom">Người tạo đơn</th>
+                            <th className="sticky-top border-bottom">Trạng thái</th>
+                            <th className="sticky-top border-bottom">Ngày tạo</th>
+                            <th className="sticky-top border-bottom">Xóa đơn</th>
+                            <th className="sticky-top border-bottom">Chia sẻ</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="text-center">
                         {
                             marketOrders.length > 0 ? (
                                 marketOrders.map((order, index) => (
@@ -225,8 +241,9 @@ const handleShareOrder = async (order: marketProps) => {
                                         setShowModalDetailMarketOrder(true);
                                     }}
                                     style={{ cursor: 'pointer' }}
-                                >
+                                ><Badge bg="info">
                                     {order.user.name}
+                                    </Badge>
                                 </td>
                                 <td>
                                     {order.status === 1 ? (
@@ -239,7 +256,7 @@ const handleShareOrder = async (order: marketProps) => {
                                         </Badge>
                                     )}
                                 </td>
-                                <td>{order.createAt}</td>
+                                <td>{formatDate(order.createAt)}</td>
                                 <td>
                                     <div
                                         onClick={() => {
@@ -273,7 +290,6 @@ const handleShareOrder = async (order: marketProps) => {
                                 </tr>
                             )
                         }
-                        
                     </tbody>
                 </Table>
                 <ModalDeleteMarketOrder
@@ -292,15 +308,6 @@ const handleShareOrder = async (order: marketProps) => {
                     order={currentMarketOrder}
                 />
             </div>
-            <Link to="/market/add" className="position-absolute end-3 bottom-3">
-                <Button
-                    title="Tạo đơn đi chợ"
-                    className="rounded-circle fs-2"
-                    style={{ width: '5rem', height: '5rem' }}
-                >
-                    <FontAwesomeIcon icon={faPlus} />
-                </Button>
-            </Link>
 
             {/* Toast thông báo */}
             <Toast

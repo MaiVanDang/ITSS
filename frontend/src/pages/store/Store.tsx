@@ -5,21 +5,15 @@ import { Table, Badge, Button, Toast } from 'react-bootstrap';
 import axios from 'axios';
 import Url from '../../utils/url';
 import { userInfo } from '../../utils/userInfo';
+import { StoreProps } from '../../utils/interface/Interface';
 import './Store.css';
 
-interface StoreProps {
-    id: number;
-    ingredientsId: number;
-    ingredientName: string;
-    ingredientImage: string;
-    ingredientStatus: string;
-    userId:number;
-    userName: string;
-    measure: string;
-    quantity : number;
-    buyAt: string;
-    expridedAt: string;
-}
+//Shared imports
+import { TOAST_TYPES } from '../../utils/constants';
+import { getExpiryStatus } from '../../utils/ingredientHelpers';
+import { validateForFridgeAddition } from '../../utils/validationHelpers';
+import { formatDate } from '../../utils/dateHelpers';
+import { ExpiryStatusBadge } from '../../components/shared/ExpiryStatusBadge';
 
 function Store() {
     const [purchasedItems, setPurchasedItems] = useState<StoreProps[]>([]);
@@ -55,34 +49,6 @@ function Store() {
         }
     };
 
-    const calculateExpiryStatus = (exprided?: string) => {
-        try {
-            if (!exprided) return { status: "Không xác định", style: {}, daysLeft: null, tooltipText: "Không xác định ngày hết hạn" };
-            const expiredDate = new Date(exprided);
-            const currentDate = new Date();
-
-            const daysLeft = Math.floor((expiredDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24) + 1);
-
-            let tooltipText = "";
-
-            if (daysLeft > 3) {
-                tooltipText = `Thực phẩm còn ${daysLeft} ngày nữa là hết hạn`;
-                return { status: "Còn hạn", style: { backgroundColor: "transparent" }, daysLeft, tooltipText };
-            } else if (daysLeft > 0) {
-                tooltipText = `Thực phẩm còn ${daysLeft} ngày nữa là hết hạn`;
-                return { status: "Sắp hết hạn", style: { backgroundColor: "#FFF3CD" }, daysLeft, tooltipText };
-            } else if (daysLeft === 0) {
-                tooltipText = "Thực phẩm hết hạn ngày hôm nay";
-                return { status: "Hết hạn hôm nay", style: { backgroundColor: "#F8D7DA" }, daysLeft, tooltipText };
-            } else {
-                tooltipText = `Thực phẩm đã hết hạn từ ${Math.abs(daysLeft)} ngày trước`;
-                return { status: "Đã hết hạn", style: { backgroundColor: "#F5C6CB" }, daysLeft, tooltipText };
-            }
-        } catch {
-            return { status: "Không xác định", style: {}, daysLeft: null, tooltipText: "Không xác định ngày hết hạn" };
-        }
-    };
-
     const isExpired = (expirationDate?: string) => {
         if (!expirationDate) return false;
         const today = new Date();
@@ -99,37 +65,20 @@ function Store() {
     };
 
     const handleAddFromStoreToFridge = async (item: StoreProps) => {
-        if (item === null || item === undefined) {
-            showToastMessage('danger', 'Không có thông tin thực phẩm để thêm vào tủ lạnh.');
-            return;
+        const validation = validateForFridgeAddition(item, userInfo?.fridgeId?.toString());
+        
+        if (!validation.isValid) {
+        const toastType = validation.message?.includes('hết hạn') 
+            ? TOAST_TYPES.DANGER 
+            : TOAST_TYPES.WARNING;
+        showToastMessage(toastType, validation.message!);
+        return;
         }
 
-        // ✅ KIỂM TRA FRIDGEID TRƯỚC KHI GỬI REQUEST
-        if (!userInfo?.fridgeId) {
-            showToastMessage('danger', 'Không tìm thấy thông tin tủ lạnh. Vui lòng đăng nhập lại.');
-            console.error('fridgeId is null or undefined:', userInfo);
-            return;
-        }
-
-
-        if (isExpired(item.expridedAt)) {
-            showToastMessage('danger', `${item.ingredientName} đã hết hạn (${item.expridedAt}}).`);
-            return;
-        }
-
-        if (item.ingredientStatus === 'SEASONING') {
-            showToastMessage('warning', 'Gia vị nêm không cần thêm vào tủ lạnh.');
-            return;
-        }
-
-        if (item.ingredientName.trim() === "Gạo") {
-            showToastMessage('warning', 'Gạo không cần thêm vào tủ lạnh.');
-            return;
-        }
 
         try {
             const requestData = {
-                fridgeId: userInfo.fridgeId,
+                fridgeId: userInfo?.fridgeId ?? '',
                 ingredientsId: item.ingredientsId,
                 quantity: item.quantity,
                 measure: item.measure,
@@ -139,24 +88,24 @@ function Store() {
                 ingredientImage: item.ingredientImage,
                 ingredientStatus: item.ingredientStatus,
             };
-            console.log('Request data to add to fridge:', requestData);
 
             await axios.post(Url(`fridge/store/ingredients`), requestData);
 
-            showToastMessage('success', `Đã thêm ${item.ingredientName} vào tủ lạnh!`);
+            showToastMessage(TOAST_TYPES.SUCCESS, `Đã thêm ${item.ingredientName} vào tủ lạnh!`);
             fetchPurchasedItems();
         } catch (error: any) {
-            console.error('Lỗi khi thêm vào tủ lạnh:', error);
-            console.error('Error response:', error.response?.data);
+            // console.error('Lỗi khi thêm vào tủ lạnh:', error);
+            // console.error('Error response:', error.response?.data);
             
-            // ✅ CHI TIẾT HÓA ERROR HANDLING
-            if (error.response?.status === 400) {
-                showToastMessage('danger', 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.');
-            } else if (error.response?.status === 404) {
-                showToastMessage('danger', 'Không tìm thấy tủ lạnh hoặc nguyên liệu.');
-            } else {
-                showToastMessage('danger', error.response?.data?.message || 'Không thể thêm vào tủ lạnh');
-            }
+            const errorMessage = (() => {
+                switch (error.response?.status) {
+                case 400: return 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
+                case 404: return 'Không tìm thấy tủ lạnh hoặc nguyên liệu.';
+                default: return error.response?.data?.message || 'Không thể thêm vào tủ lạnh';
+                }
+            })();
+
+            showToastMessage(TOAST_TYPES.DANGER, errorMessage);
         }
     };
 
@@ -222,24 +171,24 @@ function Store() {
                 </div>
             ) : (
                 <Table hover bordered responsive>
-                    <thead className="table-dark">
+                    <thead className="text-center sticky-top table-dark">
                         <tr>
-                            <th>STT</th>
-                            <th>Ảnh</th>
-                            <th>Tên thực phẩm</th>
-                            <th>Số lượng</th>
-                            <th>Đơn vị tính</th>
-                            <th>Loại</th>
-                            <th>Người mua</th>
-                            <th>Ngày mua</th>
-                            <th>Ngày hết hạn</th>
-                            <th>Trạng thái</th>
-                            <th>Thêm vào tủ lạnh</th>
+                            <th className="sticky-top border-bottom">STT</th>
+                            <th className="sticky-top border-bottom">Ảnh</th>
+                            <th className="sticky-top border-bottom">Tên thực phẩm</th>
+                            <th className="sticky-top border-bottom">Số lượng</th>
+                            <th className="sticky-top border-bottom">Đơn vị tính</th>
+                            <th className="sticky-top border-bottom">Loại</th>
+                            <th className="sticky-top border-bottom">Người mua</th>
+                            <th className="sticky-top border-bottom">Ngày mua</th>
+                            <th className="sticky-top border-bottom">Ngày hết hạn</th>
+                            <th className="sticky-top border-bottom">Trạng thái</th>
+                            <th className="sticky-top border-bottom">Thêm vào tủ lạnh</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="text-center">
                         {purchasedItems.map((item, index) => {
-                            const { status, style, tooltipText } = calculateExpiryStatus(item.expridedAt);
+                            const { status, style, tooltipText } = getExpiryStatus(item.expridedAt);
 
                             return (
                                 <tr key={`${item.id}-${index}`} style={style} title={tooltipText}>
@@ -256,20 +205,9 @@ function Store() {
                                     <td>{item.measure || 'Không rõ'}</td>
                                     <td>{renderIngredientType(item.ingredientStatus)}</td>
                                     <td><Badge bg="info">{item.userName}</Badge></td>
-                                    <td>{item?.buyAt || 'Chưa cập nhật'}</td>
-                                    <td>{item?.expridedAt || 'Chưa có'}</td>
-                                    <td>
-                                        <Badge 
-                                            bg={
-                                                status === "Còn hạn" ? "success" :
-                                                status === "Sắp hết hạn" ? "warning" :
-                                                status === "Hết hạn hôm nay" ? "danger" :
-                                                status === "Đã hết hạn" ? "danger" : "secondary"
-                                            }
-                                        >
-                                            {status}
-                                        </Badge>
-                                    </td>
+                                    <td>{formatDate(item.buyAt)}</td>
+                                    <td>{formatDate(item.expridedAt)}</td>
+                                    <td><ExpiryStatusBadge status={status} /></td>
                                     <td className="text-center">
                                         <Button
                                             variant={
@@ -316,9 +254,9 @@ function Store() {
             >
                 <Toast.Header>
                     <strong className="me-auto">
-                        {toastType === 'success' ? 'Thành công' : 
-                        toastType === 'danger' ? 'Cảnh báo' : 
-                        toastType === 'info' ? 'Thông tin' : 'Thông báo'}
+                        {toastType === TOAST_TYPES.SUCCESS ? 'Thành công' : 
+                         toastType === TOAST_TYPES.DANGER ? 'Cảnh báo' : 
+                         toastType === TOAST_TYPES.INFO ? 'Thông tin' : 'Thông báo'}
                     </strong>
                 </Toast.Header>
                 <Toast.Body className={

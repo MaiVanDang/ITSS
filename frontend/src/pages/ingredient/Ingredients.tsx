@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Url from '../../utils/url';
 import { Badge, Button, Table } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRotateLeft, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faKitchenSet, faRotateLeft, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { ingredientProps } from '../../utils/interface/Interface';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteIngredients, restoreIngredients, updateIngredients } from './IngredientSlice';
@@ -11,6 +11,7 @@ import { ingredientsSelector } from '../../redux/selectors';
 import SearchIngredients from '../../components/search/SearchIngredients';
 import ModalAddIngredient from '../../components/modal/ModalAddIngredient';
 import ModalEditIngredient from '../../components/modal/ModalEditIngredient';
+import { formatDate } from '../../utils/dateHelpers';
 
 function Ingredients() {
     const dispatch = useDispatch();
@@ -70,35 +71,49 @@ function Ingredients() {
 
     return (
         <div>
-            <div className="mb-3    position-relative ">
-                <SearchIngredients />
-                <Button
-                    onClick={() => setShowModalAddIngredient(true)}
-                    className="h-100 fs-5 position-absolute top-0 end-1"
-                    style={{ width: '20%' }}
-                >
-                    Thêm nguyên liệu
-                </Button>
+            <div className="mb-3">
+                {/* Header */}
+                <div className="mb-3">
+                    <h2 className="mb-0">
+                        <FontAwesomeIcon icon={faKitchenSet} className="me-2" />
+                        Kho thực phẩm đã lưu trữ
+                    </h2>
+                </div>
+                
+                {/* Search và Add button cùng hàng */}
+                <div className="d-flex justify-content-between align-items-center gap-3">
+                    <div className="flex-grow-1">
+                        <SearchIngredients/>
+                    </div>
+                    <Button
+                        onClick={() => setShowModalAddIngredient(true)}
+                        className="btn btn-primary px-4 py-2 rounded-3 shadow-sm flex-shrink-0"
+                        style={{ fontSize: '1rem' }}
+                    >
+                        + Thêm nguyên liệu
+                    </Button>
+                </div>
             </div>
+
             <div className="overflow-y-scroll" style={{ height: '92vh' }}>
                 <Table hover bordered>
-                    <thead className="fs-5 ">
+                    <thead className="text-center sticky-top table-dark">
                         <tr>
-                            <th>STT</th>
-                            <th>Ảnh</th>
-                            <th>Tên nguyên liệu</th>
-                            <th>Trạng thái</th>
-                            <th>Ngày tạo</th>
-                            <th>Hết hạn (ngày)</th>
-                            <th>Xóa</th>
-                            <th>Loại</th>
+                            <th className="sticky-top border-bottom">STT</th>
+                            <th className="sticky-top border-bottom">Ảnh</th>
+                            <th className="sticky-top border-bottom">Tên nguyên liệu</th>
+                            <th className="sticky-top border-bottom">Trạng thái</th>
+                            <th className="sticky-top border-bottom">Ngày tạo</th>
+                            <th className="sticky-top border-bottom">Hết hạn (ngày)</th>
+                            <th className="sticky-top border-bottom">Xóa</th>
+                            <th className="sticky-top border-bottom">Loại</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody >
                         {lishIngredients.map((ingredient, index) => (
                             <tr key={index}>
-                                <td>{index + 1}</td>
-                                <td>
+                                <td className="text-center">{index + 1}</td>
+                                <td className="text-center">
                                     <img
                                         src={ingredient.image}
                                         alt="anh"
@@ -113,7 +128,7 @@ function Ingredients() {
                                 >
                                     {ingredient.name}
                                 </td>
-                                <td>
+                                <td className="text-center">
                                     {ingredient.status === 1 ? (
                                         <Badge pill bg="success">
                                             Sẵn sàng mua
@@ -124,9 +139,9 @@ function Ingredients() {
                                         </Badge>
                                     )}
                                 </td>
-                                <td>{ingredient.createAt}</td>
-                                <td>{ingredient.dueDate}</td>
-                                <td>
+                                <td className="text-center">{formatDate(ingredient.createAt)}</td>
+                                <td className="text-center">{ingredient.dueDate}</td>
+                                <td className="text-center">
                                     {ingredient.status === 1 ? (
                                         <div
                                             onClick={() => {
