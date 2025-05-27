@@ -11,6 +11,7 @@ import './Fridge.css';
 import { getExpiryStatus } from '../../utils/ingredientHelpers';
 import { formatDate } from '../../utils/dateHelpers';
 import { ExpiryStatusBadge } from '../../components/shared/ExpiryStatusBadge';
+import { toast } from 'react-toastify';
 
 function Fridge() {
     const [fridge, setFridge] = useState<fridgeProps>({} as fridgeProps);
@@ -23,8 +24,8 @@ function Fridge() {
                 const results = await axios.get(Url(`fridge/user/${userInfo?.id}`));
                 setFridge(results.data);
             } catch (error: any) {
-                alert(error.response.data.message);
-                console.log(error);
+                toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi tải dữ liệu.");
+                console.error(error);
             }
         };
         fetchApiGroupFridge();
@@ -103,13 +104,21 @@ function Fridge() {
                                     <td>{formatDate(item.createAt)}</td>
                                     <td>{formatDate(item.exprided)}</td>
                                     <td><ExpiryStatusBadge status={status} /></td>
-                                    <td className="text-center"
-                                        onClick={() => {
-                                            setCurrentIngredient(item);
-                                            setShowModalRemoveFridgeGroup(true);
-                                        }}
-                                    >
-                                        <Button variant="outline-danger" size="sm" title="Sử dụng / loại bỏ khỏi tủ">
+                                    <td className="text-center">
+                                        <Button
+                                            variant="outline-danger"
+                                            size="sm"
+                                            title="Sử dụng / loại bỏ khỏi tủ"
+                                            onClick={() => {
+                                                const { status } = getExpiryStatus(item.exprided);
+                                                if (status === 'Đã hết hạn') {
+                                                    toast.warn("Nguyên liệu đã hết hạn. Vui lòng không sử dụng để đảm bảo sức khỏe.");
+                                                    return;
+                                                }
+                                                setCurrentIngredient(item);
+                                                setShowModalRemoveFridgeGroup(true);
+                                            }}
+                                        >
                                             <FontAwesomeIcon icon={faRightFromBracket} />
                                         </Button>
                                     </td>

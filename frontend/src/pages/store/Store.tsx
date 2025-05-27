@@ -14,6 +14,7 @@ import { getExpiryStatus } from '../../utils/ingredientHelpers';
 import { validateForFridgeAddition } from '../../utils/validationHelpers';
 import { formatDate } from '../../utils/dateHelpers';
 import { ExpiryStatusBadge } from '../../components/shared/ExpiryStatusBadge';
+import { toast } from 'react-toastify';
 
 function Store() {
     const [purchasedItems, setPurchasedItems] = useState<StoreProps[]>([]);
@@ -247,7 +248,14 @@ function Store() {
                                             variant="outline-danger"
                                             size="sm"
                                             title="Sử dụng / loại bỏ khỏi tủ"
-                                            onClick={() => handleShowDeleteModal(item)}
+                                            onClick={() => {
+                                                const { status } = getExpiryStatus(item.expridedAt);
+                                                if (status === 'Đã hết hạn') {
+                                                    toast.warn("Nguyên liệu đã hết hạn. Vui lòng không sử dụng để đảm bảo sức khỏe.");
+                                                    return;
+                                                }
+                                                handleShowDeleteModal(item);
+                                            }}
                                         >
                                             <FontAwesomeIcon icon={faRightFromBracket} />
                                         </Button>

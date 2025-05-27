@@ -1,7 +1,9 @@
-import React, {Fragment} from 'react';
-import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+import React, { Fragment } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { default as DefaultLayout } from '../src/components/Layout/DefaultLayout/DefautLayout';
 import { publicRoutes } from './routes';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   return (
@@ -26,14 +28,14 @@ function App() {
                   </Layout>
                 }
               />
-            )
-          }
-
-          )}
+            );
+          })}
         </Routes>
-    </div>
+
+        {/* ✅ Đặt ToastContainer ở đây */}
+        <ToastContainer />
+      </div>
     </Router>
-    
   );
 }
 
