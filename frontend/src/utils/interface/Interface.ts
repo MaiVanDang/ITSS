@@ -112,6 +112,7 @@ export interface fridgeProps {
 
 export interface StoreProps {
     id: number;
+    storeId: number;
     ingredientsId: number;
     ingredientName: string;
     ingredientImage: string;

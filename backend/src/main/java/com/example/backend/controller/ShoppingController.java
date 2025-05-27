@@ -2,18 +2,14 @@ package com.example.backend.controller;
 
 import com.example.backend.dtos.ShoppingDto;
 import com.example.backend.dtos.StoreDto;
-import com.example.backend.entities.ShoppingAttributeEntity;
-import com.example.backend.repository.ShoppingAttributeRepository;
 import com.example.backend.service.ShoppingService;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -94,5 +90,14 @@ public class ShoppingController {
     public List<StoreDto> getAllShoppingByUser(@PathVariable Integer userId) {
         List<StoreDto> response = shoppingService.getDetailUserStore(userId);
         return response;
+    }
+
+    @DeleteMapping("/market/purchased-items/{storeId}/{quantity}")
+    public String deletePurchasedItem(
+            @PathVariable Integer storeId,
+            @PathVariable Integer quantity) {
+        System.out.println("Deleting purchased item with storeId: " + storeId + " and quantity: " + quantity);
+        shoppingService.deleteStoreByUser(storeId, quantity);
+        return "success";
     }
 }

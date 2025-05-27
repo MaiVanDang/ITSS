@@ -1,14 +1,14 @@
-import { faShoppingCart, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faShoppingCart, faCheckCircle, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
-import { Table, Badge, Button, Toast } from 'react-bootstrap';
+import { Table, Badge, Button, Toast, Modal } from 'react-bootstrap';
 import axios from 'axios';
 import Url from '../../utils/url';
 import { userInfo } from '../../utils/userInfo';
 import { StoreProps } from '../../utils/interface/Interface';
 import './Store.css';
 
-//Shared imports
+// Shared imports
 import { TOAST_TYPES } from '../../utils/constants';
 import { getExpiryStatus } from '../../utils/ingredientHelpers';
 import { validateForFridgeAddition } from '../../utils/validationHelpers';
@@ -22,6 +22,11 @@ function Store() {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success');
 
+    // Modal & quantity state
+    const [selectedItem, setSelectedItem] = useState<StoreProps | null>(null);
+    const [deleteQuantity, setDeleteQuantity] = useState<number>(0);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
     useEffect(() => {
         fetchPurchasedItems();
     }, []);
@@ -33,11 +38,9 @@ function Store() {
             if (Array.isArray(response.data)) {
                 setPurchasedItems(response.data);
             } else {
-                console.warn('API không trả về array:', response.data);
                 setPurchasedItems([]);
             }
         } catch (error: any) {
-            console.error('Lỗi khi lấy danh sách thực phẩm đã mua:', error);
             if (error.response?.status === 404) {
                 setPurchasedItems([]);
                 showToastMessage('info', 'Chưa có nguyên liệu nào được lưu trữ');
@@ -64,17 +67,36 @@ function Store() {
         setShowToast(true);
     };
 
+    const handleShowDeleteModal = (item: StoreProps) => {
+        setSelectedItem(item);
+        setDeleteQuantity(item.quantity);
+        setShowDeleteModal(true);
+    };
+
+    const removeIngredientFromStore = async () => {
+        if (!selectedItem) return;
+
+        try {
+            await axios.delete(Url(`market/purchased-items/${selectedItem.storeId}/${deleteQuantity}`));
+            showToastMessage(TOAST_TYPES.SUCCESS, 'Đã loại bỏ thực phẩm khỏi kho lưu trữ');
+            setShowDeleteModal(false);
+            fetchPurchasedItems();
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || 'Không thể loại bỏ thực phẩm khỏi kho lưu trữ';
+            showToastMessage(TOAST_TYPES.DANGER, errorMessage);
+        }
+    };
+
     const handleAddFromStoreToFridge = async (item: StoreProps) => {
         const validation = validateForFridgeAddition(item, userInfo?.fridgeId?.toString());
-        
-        if (!validation.isValid) {
-        const toastType = validation.message?.includes('hết hạn') 
-            ? TOAST_TYPES.DANGER 
-            : TOAST_TYPES.WARNING;
-        showToastMessage(toastType, validation.message!);
-        return;
-        }
 
+        if (!validation.isValid) {
+            const toastType = validation.message?.includes('hết hạn')
+                ? TOAST_TYPES.DANGER
+                : TOAST_TYPES.WARNING;
+            showToastMessage(toastType, validation.message!);
+            return;
+        }
 
         try {
             const requestData = {
@@ -94,14 +116,11 @@ function Store() {
             showToastMessage(TOAST_TYPES.SUCCESS, `Đã thêm ${item.ingredientName} vào tủ lạnh!`);
             fetchPurchasedItems();
         } catch (error: any) {
-            // console.error('Lỗi khi thêm vào tủ lạnh:', error);
-            // console.error('Error response:', error.response?.data);
-            
             const errorMessage = (() => {
                 switch (error.response?.status) {
-                case 400: return 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
-                case 404: return 'Không tìm thấy tủ lạnh hoặc nguyên liệu.';
-                default: return error.response?.data?.message || 'Không thể thêm vào tủ lạnh';
+                    case 400: return 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.';
+                    case 404: return 'Không tìm thấy tủ lạnh hoặc nguyên liệu.';
+                    default: return error.response?.data?.message || 'Không thể thêm vào tủ lạnh';
                 }
             })();
 
@@ -123,12 +142,6 @@ function Store() {
                 return <Badge pill bg="light">Không xác định</Badge>;
         }
     };
-
-    
-    useEffect(() => {
-        console.log('Current userInfo:', userInfo);
-        console.log('fridgeId:', userInfo?.fridgeId);
-    }, []);
 
     if (loading) {
         return (
@@ -153,7 +166,6 @@ function Store() {
                 </Button>
             </div>
 
-            {/*THÊM DEBUG INFO CHO USER */}
             {!userInfo?.fridgeId && (
                 <div className="alert alert-warning">
                     <strong>Cảnh báo:</strong> Không tìm thấy thông tin tủ lạnh. 
@@ -173,17 +185,18 @@ function Store() {
                 <Table hover bordered responsive>
                     <thead className="text-center sticky-top table-dark">
                         <tr>
-                            <th className="sticky-top border-bottom">STT</th>
-                            <th className="sticky-top border-bottom">Ảnh</th>
-                            <th className="sticky-top border-bottom">Tên thực phẩm</th>
-                            <th className="sticky-top border-bottom">Số lượng</th>
-                            <th className="sticky-top border-bottom">Đơn vị tính</th>
-                            <th className="sticky-top border-bottom">Loại</th>
-                            <th className="sticky-top border-bottom">Người mua</th>
-                            <th className="sticky-top border-bottom">Ngày mua</th>
-                            <th className="sticky-top border-bottom">Ngày hết hạn</th>
-                            <th className="sticky-top border-bottom">Trạng thái</th>
-                            <th className="sticky-top border-bottom">Thêm vào tủ lạnh</th>
+                            <th>STT</th>
+                            <th>Ảnh</th>
+                            <th>Tên thực phẩm</th>
+                            <th>Số lượng</th>
+                            <th>Đơn vị tính</th>
+                            <th>Loại</th>
+                            <th>Người mua</th>
+                            <th>Ngày mua</th>
+                            <th>Ngày hết hạn</th>
+                            <th>Trạng thái</th>
+                            <th>Thêm vào tủ lạnh</th>
+                            <th>Sử dụng</th>
                         </tr>
                     </thead>
                     <tbody className="text-center">
@@ -196,7 +209,7 @@ function Store() {
                                     <td>
                                         <img
                                             src={item.ingredientImage}
-                                            alt="anh"
+                                            alt="ảnh"
                                             style={{ height: '3rem', width: '3rem' }}
                                         />
                                     </td>
@@ -208,32 +221,35 @@ function Store() {
                                     <td>{formatDate(item.buyAt)}</td>
                                     <td>{formatDate(item.expridedAt)}</td>
                                     <td><ExpiryStatusBadge status={status} /></td>
-                                    <td className="text-center">
+                                    <td>
                                         <Button
                                             variant={
-                                                isExpired(item?.expridedAt) ? "outline-danger" : 
-                                                !userInfo?.fridgeId ? "outline-secondary" :
-                                                "outline-success"
+                                                isExpired(item.expridedAt) ? "outline-danger" :
+                                                    !userInfo?.fridgeId ? "outline-secondary" :
+                                                        "outline-success"
                                             }
                                             size="sm"
                                             onClick={() => handleAddFromStoreToFridge(item)}
-                                            disabled={isExpired(item?.expridedAt) || !userInfo?.fridgeId}
+                                            disabled={isExpired(item.expridedAt) || !userInfo?.fridgeId}
                                             title={
-                                                isExpired(item?.expridedAt) 
+                                                isExpired(item.expridedAt)
                                                     ? "Không thể thêm thực phẩm hết hạn vào tủ lạnh"
                                                     : !userInfo?.fridgeId
-                                                    ? "Không tìm thấy thông tin tủ lạnh"
-                                                    : "Thêm vào tủ lạnh"
+                                                        ? "Không tìm thấy thông tin tủ lạnh"
+                                                        : "Thêm vào tủ lạnh"
                                             }
                                         >
-                                            <FontAwesomeIcon 
-                                                icon={faCheckCircle} 
-                                                className={
-                                                    isExpired(item?.expridedAt) ? "text-danger" : 
-                                                    !userInfo?.fridgeId ? "text-secondary" :
-                                                    "text-success"
-                                                }
-                                            />
+                                            <FontAwesomeIcon icon={faCheckCircle} />
+                                        </Button>
+                                    </td>
+                                    <td>
+                                        <Button
+                                            variant="outline-danger"
+                                            size="sm"
+                                            title="Sử dụng / loại bỏ khỏi tủ"
+                                            onClick={() => handleShowDeleteModal(item)}
+                                        >
+                                            <FontAwesomeIcon icon={faRightFromBracket} />
                                         </Button>
                                     </td>
                                 </tr>
@@ -243,6 +259,7 @@ function Store() {
                 </Table>
             )}
 
+            {/* Toast thông báo */}
             <Toast
                 onClose={() => setShowToast(false)}
                 show={showToast}
@@ -254,19 +271,61 @@ function Store() {
             >
                 <Toast.Header>
                     <strong className="me-auto">
-                        {toastType === TOAST_TYPES.SUCCESS ? 'Thành công' : 
-                         toastType === TOAST_TYPES.DANGER ? 'Cảnh báo' : 
-                         toastType === TOAST_TYPES.INFO ? 'Thông tin' : 'Thông báo'}
+                        {toastType === TOAST_TYPES.SUCCESS ? 'Thành công' :
+                            toastType === TOAST_TYPES.DANGER ? 'Cảnh báo' :
+                                toastType === TOAST_TYPES.INFO ? 'Thông tin' : 'Thông báo'}
                     </strong>
                 </Toast.Header>
                 <Toast.Body className={
-                    toastType === 'success' ? 'bg-light' : 
-                    toastType === 'danger' ? 'text-white' : 
-                    toastType === 'info' ? 'bg-light' : 'text-dark'
+                    toastType === 'success' ? 'bg-light' :
+                        toastType === 'danger' ? 'text-white' :
+                            toastType === 'info' ? 'bg-light' : 'text-dark'
                 }>
                     {toastMessage}
                 </Toast.Body>
             </Toast>
+
+            {/* Modal xóa số lượng */}
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Sử dụng nguyên liệu</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedItem && (
+                        <>
+                            <p>
+                                Bạn muốn sử dụng <strong>{selectedItem.ingredientName}</strong> ?
+                            </p>
+                            <div className="mb-3">
+                                <label htmlFor="deleteQuantity" className="form-label">
+                                    Nhập số lượng cần sử dụng (tối đa: {selectedItem.quantity}):
+                                </label>
+                                <input
+                                    type="number"
+                                    id="deleteQuantity"
+                                    className="form-control"
+                                    value={deleteQuantity}
+                                    min={1}
+                                    max={selectedItem.quantity}
+                                    onChange={(e) => setDeleteQuantity(Number(e.target.value))}
+                                />
+                            </div>
+                        </>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+                        Hủy
+                    </Button>
+                    <Button
+                        variant="danger"
+                        onClick={removeIngredientFromStore}
+                        disabled={deleteQuantity <= 0 || deleteQuantity > (selectedItem?.quantity ?? 0)}
+                    >
+                        Xác nhận sử dụng
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }

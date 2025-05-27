@@ -1,7 +1,7 @@
 import { faRightFromBracket, faSnowflake } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
-import { Table, Badge, Button } from 'react-bootstrap';
+import { Table, Button } from 'react-bootstrap';
 import { fridgeProps, ingredientsProps } from '../../utils/interface/Interface';
 import axios from 'axios';
 import Url from '../../utils/url';
@@ -30,6 +30,8 @@ function Fridge() {
         fetchApiGroupFridge();
     }, [showModalRemoveFridgeGroup]);
 
+    const hasExpiredItems = fridge.ingredients?.some(item => getExpiryStatus(item.exprided).status === 'expired');
+
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-3">
@@ -41,6 +43,12 @@ function Fridge() {
                     Làm mới
                 </Button>
             </div>
+
+            {hasExpiredItems && (
+                <div className="alert alert-danger text-center">
+                    Một số nguyên liệu trong tủ lạnh đã hết hạn. Vui lòng kiểm tra và không sử dụng để đảm bảo sức khỏe.
+                </div>
+            )}
 
             {(!fridge.ingredients || fridge.ingredients.length === 0) ? (
                 <div className="text-center p-4">
@@ -81,7 +89,15 @@ function Fridge() {
                                             style={{ height: '3rem', width: '3rem' }}
                                         />
                                     </td>
-                                    <td><strong>{item.ingredient.name}</strong></td>
+                                    <td>
+                                        <strong>{item.ingredient.name}</strong>
+                                        {status === 'expired' && (
+                                            <div className="text-danger small mt-1">
+                                                Hiện tại nguyên liệu đã hết hạn.<br />
+                                                Vui lòng không sử dụng để đảm bảo sức khỏe.
+                                            </div>
+                                        )}
+                                    </td>
                                     <td>{item.quantity}</td>
                                     <td>{item.measure}</td>
                                     <td>{formatDate(item.createAt)}</td>

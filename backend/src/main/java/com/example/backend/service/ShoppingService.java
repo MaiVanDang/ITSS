@@ -416,4 +416,20 @@ public class ShoppingService {
         return storeDtos;
     }
 
+    public void deleteStoreByUser(Integer StoreId, Integer quantity) {
+        StoreEntity storeEntities = storeRepository.findById(StoreId)
+                .orElseThrow(
+                        () -> new NotFoundException("Không tìm thấy dữ liệu trong bảng Store với StoreId: " + StoreId));
+        if (storeEntities.getQuantity().compareTo(BigDecimal.valueOf(quantity)) < 0) {
+            throw new NotFoundException("Số lượng trong kho không đủ để xóa: " + storeEntities.getQuantity());
+        }
+        // Giảm số lượng trong kho
+        storeEntities.setQuantity(storeEntities.getQuantity().subtract(BigDecimal.valueOf(quantity)));
+        // Nếu số lượng sau khi giảm là 0, xóa khỏi kho
+        if (storeEntities.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+            storeRepository.deleteById(StoreId);
+        } else {
+            storeRepository.save(storeEntities);
+        }
+    }
 }
