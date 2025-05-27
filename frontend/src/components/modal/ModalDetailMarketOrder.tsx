@@ -17,6 +17,14 @@ interface ModalDetailMarketOrderProps {
     statusstore?: any;
 }
 
+// Enum cho các loại thông báo
+enum ToastType {
+    SUCCESS = 'success',
+    ERROR = 'danger',
+    WARNING = 'warning',
+    INFO = 'info'
+}
+
 function ModalDetailMarketOrder({
     show,
     hide,
@@ -30,7 +38,7 @@ function ModalDetailMarketOrder({
     const [shopping, setShopping] = useState<shoppingProps>({} as shoppingProps);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
-    const [toastType, setToastType] = useState('success');
+    const [toastType, setToastType] = useState<ToastType>(ToastType.SUCCESS);
 
     const callApi = async () => {
         if (indexOrder === 0) return null;
@@ -75,21 +83,20 @@ function ModalDetailMarketOrder({
             }
 
             try {
-
                 await axios.put(Url(`market/active`), {
                     id: indexOrder,
                     attributeId: ingredientId,
                     measure,
                     quantity,
                     buyAt: new Date().toLocaleDateString('sv-SE'), // Ngày mua là ngày hiện tại
-                    exprided ,
+                    exprided,
                 });
                 
                 setReload(Math.random());
-                showToastMessage('success', 'Đã đánh dấu mua thành công');
+                showToastMessage(ToastType.SUCCESS, 'Đã đánh dấu mua thành công');
             } catch (error) {
                 console.log(error);
-                showToastMessage('danger', 'Có lỗi xảy ra khi cập nhật trạng thái mua');
+                showToastMessage(ToastType.ERROR, 'Có lỗi xảy ra khi cập nhật trạng thái mua');
             }
         } else if (status === 1) {
             const isConfirmed = window.confirm(
@@ -107,7 +114,7 @@ function ModalDetailMarketOrder({
             setReload(Math.random());
         } catch (error: any) {
             console.log(error);
-            alert(error.response.data.message);
+            showToastMessage(ToastType.ERROR, error.response?.data?.message || 'Có lỗi xảy ra');
         }
     };
 
@@ -147,8 +154,8 @@ function ModalDetailMarketOrder({
         return expDate >= today && expDate <= threeDaysFromNow;
     };
 
-    // Hiển thị thông báo
-    const showToastMessage = (type: string, message: string) => {
+    // Hiển thị thông báo - đã đồng nhất
+    const showToastMessage = (type: ToastType, message: string) => {
         setToastType(type);
         setToastMessage(message);
         setShowToast(true);
@@ -165,10 +172,11 @@ function ModalDetailMarketOrder({
             setReload(Math.random());
         } catch (error) {
             console.log(error);
+            showToastMessage(ToastType.ERROR, 'Có lỗi xảy ra khi reset trạng thái mua');
         }
     };
 
-    // Thêm vào tủ lạnh
+    // Thêm vào tủ lạnh - đã cập nhật với kiểm tra statusstore
     const handleAddToFridge = async (
         ingredientId: number, 
         quantity: number, 
@@ -176,13 +184,20 @@ function ModalDetailMarketOrder({
         exprided: string, 
         ingredient: any, 
         ingredientStatus: string,
-        shoppingAttributeId: number
+        shoppingAttributeId: number,
+        statusstore: boolean
     ) => {
+        
+        // Kiểm tra xem nguyên liệu đã được thêm vào tủ lạnh chưa
+        if (statusstore === false) {
+            showToastMessage(ToastType.WARNING, `${ingredient.name} đã được thêm vào tủ lạnh rồi!`);
+            return;
+        }
         
         // Kiểm tra nguyên liệu đã hết hạn chưa
         if (isExpired(exprided)) {
             showToastMessage(
-                'danger', 
+                ToastType.ERROR, 
                 `${ingredient.name} đã hết hạn sử dụng (${exprided}). Bạn cần mua lại nguyên liệu mới trước khi thêm vào tủ lạnh để đảm bảo an toàn thực phẩm.`
             );
             
@@ -193,20 +208,20 @@ function ModalDetailMarketOrder({
         
         // Kiểm tra xem có phải gia vị nêm không
         if (ingredientStatus === 'SEASONING') {
-            showToastMessage('warning', 'Không nhất thiết phải thêm gia vị nêm vào tủ lạnh.');
+            showToastMessage(ToastType.INFO, 'Không nhất thiết phải thêm gia vị nêm vào tủ lạnh.');
             return;
         }
         
         // Kiểm tra xem có phải gạo không
         if (isSpiceOrRice(ingredient)) {
-            showToastMessage('warning', `${ingredient.name} không nhất thiết phải thêm vào tủ lạnh.`);
+            showToastMessage(ToastType.INFO, `${ingredient.name} không nhất thiết phải thêm vào tủ lạnh.`);
             return;
         }
 
         // Kiểm tra nguyên liệu sắp hết hạn
         if (isExpiringSoon(exprided)) {
             showToastMessage(
-                'warning', 
+                ToastType.WARNING, 
                 `${ingredient.name} sắp hết hạn (${exprided}). Vui lòng sử dụng sớm hoặc cân nhắc mua lại.`
             );
             // Vẫn cho phép thêm vào tủ lạnh nhưng có cảnh báo
@@ -225,12 +240,12 @@ function ModalDetailMarketOrder({
             });
             
             if (!isExpiringSoon(exprided)) {
-                showToastMessage('success', 'Thêm vào tủ lạnh thành công');
+                showToastMessage(ToastType.SUCCESS, 'Thêm vào tủ lạnh thành công');
             }
             setReload(Math.random());
         } catch (error: any) {
             console.log(error);
-            alert(error.response.data.message);
+            showToastMessage(ToastType.ERROR, error.response?.data?.message || 'Có lỗi xảy ra khi thêm vào tủ lạnh');
         }
     };
 
@@ -251,6 +266,38 @@ function ModalDetailMarketOrder({
             );
         }
         return null;
+    };
+
+    // Hàm để lấy tiêu đề toast theo loại
+    const getToastTitle = (type: ToastType) => {
+        switch (type) {
+            case ToastType.SUCCESS:
+                return 'Thành công';
+            case ToastType.ERROR:
+                return 'Lỗi';
+            case ToastType.WARNING:
+                return 'Cảnh báo';
+            case ToastType.INFO:
+                return 'Thông tin';
+            default:
+                return 'Thông báo';
+        }
+    };
+
+    // Hàm để lấy class CSS cho toast body
+    const getToastBodyClass = (type: ToastType) => {
+        switch (type) {
+            case ToastType.SUCCESS:
+                return 'text-white';
+            case ToastType.ERROR:
+                return 'text-white';
+            case ToastType.WARNING:
+                return 'text-dark';
+            case ToastType.INFO:
+                return 'text-white';
+            default:
+                return 'text-dark';
+        }
     };
 
     return (
@@ -413,10 +460,14 @@ function ModalDetailMarketOrder({
                                                                     attribute.ingredients,
                                                                     attribute.ingredientStatus,
                                                                     attribute.id,
+                                                                    attribute.statusstore // Truyền thêm statusstore
                                                                 )
                                                             }
                                                             style={{ cursor: 'pointer' }}
-                                                            className={isExpired(attribute.exprided) ? 'text-danger' : ''}
+                                                            className={
+                                                                isExpired(attribute.exprided) ? 'text-danger' : 
+                                                                attribute.statusstore === true ? 'text-success' : ''
+                                                            }
                                                         >
                                                             <FontAwesomeIcon
                                                                 size="xl"
@@ -479,7 +530,7 @@ function ModalDetailMarketOrder({
                 </Modal.Footer>
             </Modal>
 
-            {/* Toast thông báo */}
+            {/* Toast thông báo - đã đồng nhất */}
             <Toast
                 onClose={() => setShowToast(false)}
                 show={showToast}
@@ -491,16 +542,10 @@ function ModalDetailMarketOrder({
             >
                 <Toast.Header>
                     <strong className="me-auto">
-                        {toastType === 'success' ? 'Thành công' : 
-                         toastType === 'danger' ? 'Cảnh báo' : 
-                         toastType === 'info' ? 'Thông tin' : 'Lưu ý'}
+                        {getToastTitle(toastType)}
                     </strong>
                 </Toast.Header>
-                <Toast.Body className={
-                    toastType === 'success' ? 'bg-light' : 
-                    toastType === 'danger' ? 'text-white' : 
-                    toastType === 'info' ? 'text-white' : 'text-dark'
-                }>
+                <Toast.Body className={getToastBodyClass(toastType)}>
                     {toastMessage}
                 </Toast.Body>
             </Toast>

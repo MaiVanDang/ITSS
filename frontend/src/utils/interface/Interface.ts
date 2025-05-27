@@ -66,6 +66,7 @@ export interface attributesProps {
     buyAt: string;
     quantity: number;
     ingredientStatus: string;
+    statusstore: true | false;
 }
 
 export interface dishesProps {
