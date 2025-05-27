@@ -14,6 +14,7 @@ interface ModalDetailMarketOrderProps {
     leaderId?: number;
     listMember?: userInfoProps[];
     fridgeId?: number;
+    statusstore?: any;
 }
 
 function ModalDetailMarketOrder({
@@ -23,6 +24,7 @@ function ModalDetailMarketOrder({
     leaderId,
     listMember,
     fridgeId,
+    statusstore,
 }: ModalDetailMarketOrderProps) {
     const [reload, setReload] = useState(0);
     const [shopping, setShopping] = useState<shoppingProps>({} as shoppingProps);
@@ -35,6 +37,7 @@ function ModalDetailMarketOrder({
 
         try {
             const response = await axios.get(Url(`market/show/detail/${indexOrder}`));
+            console.log(response.data);
             return response.data;
         } catch (error) {
             console.error(error);
@@ -72,24 +75,14 @@ function ModalDetailMarketOrder({
             }
 
             try {
-                // Tính toán ngày mua và ngày hết hạn
-                const currentDate = new Date();
-                const buyDate = buyAt || currentDate.toISOString().split('T')[0]; // Ngày hôm nay nếu chưa có
-                
-                // Tính ngày hết hạn (ví dụ: 7 ngày sau ngày mua cho nguyên liệu tươi)
-                const expirationDate = exprided || (() => {
-                    const expDate = new Date(currentDate);
-                    expDate.setDate(expDate.getDate() + 7); // Mặc định 7 ngày
-                    return expDate.toISOString().split('T')[0];
-                })();
 
                 await axios.put(Url(`market/active`), {
                     id: indexOrder,
                     attributeId: ingredientId,
                     measure,
                     quantity,
-                    buyAt: buyDate,
-                    exprided: expirationDate,
+                    buyAt: new Date().toLocaleDateString('sv-SE'), // Ngày mua là ngày hiện tại
+                    exprided ,
                 });
                 
                 setReload(Math.random());
@@ -98,6 +91,10 @@ function ModalDetailMarketOrder({
                 console.log(error);
                 showToastMessage('danger', 'Có lỗi xảy ra khi cập nhật trạng thái mua');
             }
+        } else if (status === 1) {
+            const isConfirmed = window.confirm(
+                'Nguyên liệu này đã được mua.'
+            );
         }
     };
 
@@ -178,9 +175,10 @@ function ModalDetailMarketOrder({
         measure: string, 
         exprided: string, 
         ingredient: any, 
-        ingredientStatus: string
+        ingredientStatus: string,
+        shoppingAttributeId: number
     ) => {
-
+        
         // Kiểm tra nguyên liệu đã hết hạn chưa
         if (isExpired(exprided)) {
             showToastMessage(
@@ -205,8 +203,6 @@ function ModalDetailMarketOrder({
             return;
         }
 
-        
-
         // Kiểm tra nguyên liệu sắp hết hạn
         if (isExpiringSoon(exprided)) {
             showToastMessage(
@@ -223,6 +219,9 @@ function ModalDetailMarketOrder({
                 quantity,
                 measure,
                 exprided,
+                ingredientStatus,
+                ingredient,
+                shoppingAttributeId: shoppingAttributeId,
             });
             
             if (!isExpiringSoon(exprided)) {
@@ -412,7 +411,8 @@ function ModalDetailMarketOrder({
                                                                     attribute.measure,
                                                                     attribute.exprided,
                                                                     attribute.ingredients,
-                                                                    attribute.ingredientStatus
+                                                                    attribute.ingredientStatus,
+                                                                    attribute.id,
                                                                 )
                                                             }
                                                             style={{ cursor: 'pointer' }}

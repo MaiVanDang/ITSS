@@ -17,6 +17,9 @@ public class StoreEntity {
     @Column(name = "ingredients_id")
     private Integer ingredientsId;
 
+    @Column(name = "user_id")
+    private Integer userId;
+
     @Column(precision = 10, scale = 2)
     private BigDecimal quantity;
 
@@ -37,4 +40,9 @@ public class StoreEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserEntity user;
+
+    // Helper method để lấy userId
+    public Integer getUserId() {
+        return user != null ? user.getId() : null;
+    }
 }

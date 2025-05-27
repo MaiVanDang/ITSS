@@ -53,6 +53,8 @@ public class FridgeController {
     @PostMapping("/fridge/store/ingredients")
     public String addNewIngredientFromStore(@RequestBody Map<String, Object> request) {
 
+        System.out.println("Received request: " + request);
+
         // Extract and validate each field individually
         Object fridgeIdObj = request.get("fridgeId");
         Object ingredientsIdObj = request.get("ingredientsId");
@@ -89,21 +91,11 @@ public class FridgeController {
         return "success";
     }
 
-    // @PostMapping("/fridge/ingredients")
-    // public String addIngredient(@RequestBody Map<String, Object> request) {
-    // Integer fridgeId = (Integer) request.get("fridgeId");
-    // Integer ingredientId = (Integer) request.get("ingredientId");
-    // Integer quantity = (Integer) request.get("quantity");
-    // String measure = (String) request.get("measure");
-    // LocalDate expridedWhenShopping =
-    // LocalDate.parse(request.get("exprided").toString());
-    // Integer shoppingAttributeId = (Integer) request.get("shoppingAttributeId");
-
-    // fridgeService.addIngredientsFromStore(ingredientId, fridgeId, quantity,
-    // measure, expridedWhenShopping,
-    // shoppingAttributeId);
-    // return "success";
-    // }
+    @PostMapping("/fridge/ingredients")
+    public String addIngredientToFridge(@RequestBody Map<String, Object> request) {
+        fridgeService.addIngredientToFridge(request);
+        return "success";
+    }
 
     @DeleteMapping("/fridge/ingredients/{id}")
     public String autoDeleteIngredient(@PathVariable Integer id) {

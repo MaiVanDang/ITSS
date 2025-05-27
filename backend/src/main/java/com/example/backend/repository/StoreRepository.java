@@ -18,4 +18,8 @@ public interface StoreRepository extends JpaRepository<StoreEntity, Integer> {
             LocalDate buyAt,
             LocalDate expiredAt);
 
+    StoreEntity findByIngredientsIdAndExpridedAt(
+            Integer ingredientsId,
+            LocalDate expiredAt);
+
 }

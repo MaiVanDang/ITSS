@@ -44,9 +44,9 @@ public class ShoppingService {
         return dtos;
     }
 
-    public ShoppingDto getDetailShoppingById(Integer id) {
+    public ShoppingDto getDetailShoppingById(Integer orderId) {
         ShoppingDto shoppingDto = new ShoppingDto();
-        ShoppingEntity entity = shoppingRepository.findById(id).get();
+        ShoppingEntity entity = shoppingRepository.findById(orderId).get();
         UserEntity userShopping = userRepository.findById(entity.getUserId()).get();
         UserDto userShoppingDto = shoppingModelMapper.map(userShopping, UserDto.class);
         shoppingDto = shoppingModelMapper.map(entity, ShoppingDto.class);
@@ -73,7 +73,7 @@ public class ShoppingService {
 
         }
         List<DishAttributeDto> dishAttributeDtos = new ArrayList<DishAttributeDto>();
-        List<DishAttributeEntity> dishAttributes = dishAttributeRepository.findByShoppingId(id);
+        List<DishAttributeEntity> dishAttributes = dishAttributeRepository.findByShoppingId(orderId);
         for (DishAttributeEntity dishAttribute : dishAttributes) {
             DishAttributeDto dishAttributeDto = shoppingModelMapper.map(dishAttribute, DishAttributeDto.class);
             DishEntity dish = dishRepository.findById(dishAttribute.getDishId()).get();
@@ -231,14 +231,7 @@ public class ShoppingService {
     }
 
     public void updateShoppingAttribute(Integer id, Integer attributeId, String measure, Integer quantity,
-            LocalDate buyAt, LocalDate exprided) {
-
-        System.out.println("id: " + id);
-        System.out.println("attributeId: " + attributeId);
-        System.out.println("measure: " + measure);
-        System.out.println("quantity: " + quantity);
-        System.out.println("buyAt: " + buyAt);
-        System.out.println("exprided: " + exprided);
+            LocalDate buyAt) {
 
         if (attributeRepository.findById(id) == null) {
             throw new NotFoundException("Không tìm thấy đơn đi chợ với mã đơn : " + id);
@@ -246,9 +239,10 @@ public class ShoppingService {
             ShoppingEntity shopping = shoppingRepository.findById(id).get();
             ShoppingAttributeEntity attributeEntity = attributeRepository.findByShoppingIdAndIngredientsIdAndMeasure(id,
                     attributeId, measure);
+
             IngredientsEntity ingredientEntity = ingredientsRepository.findById(attributeEntity.getIngredientsId())
                     .get();
-
+            LocalDate exprided = buyAt.plusDays(ingredientEntity.getDueDate());
             StoreEntity oldStore = storeRepository.findByIngredientsIdAndBuyAtAndExpridedAt(
                     attributeEntity.getIngredientsId(),
                     buyAt,
@@ -259,13 +253,13 @@ public class ShoppingService {
                 storeRepository.save(oldStore);
             } else {
                 // Nếu chưa có trong bảng store, tạo mới
-                StoreEntity storeEntity = new StoreEntity();
-                // storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
-                // storeEntity.setUserId(attributeEntity.getUserId());
+                StoreEntity storeEntity = new StoreEntity(); // Đổi từ StoreDto sang StoreEntity
+                storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
+                storeEntity.setUserId(shopping.getUserId()); // Lấy userId từ shopping
                 storeEntity.setQuantity(BigDecimal.valueOf(quantity));
                 storeEntity.setBuyAt(buyAt);
                 storeEntity.setExpridedAt(exprided);
-                storeEntity.setMeasure(attributeEntity.getMeasure());
+                storeEntity.setMeasure(measure);
                 storeRepository.save(storeEntity);
             }
 
@@ -389,17 +383,34 @@ public class ShoppingService {
     }
 
     public List<StoreDto> getDetailUserStore(Integer userId) {
-        List<StoreDto> storeDtos = new ArrayList<>();
         List<StoreEntity> storeEntities = storeRepository.findByUserId(userId);
+        List<StoreDto> storeDtos = new ArrayList<>();
+
         for (StoreEntity storeEntity : storeEntities) {
-            StoreDto storeDto = shoppingModelMapper.map(storeEntity, StoreDto.class);
+            StoreDto storeDto = new StoreDto();
+
+            // Map basic store fields manually
+            storeDto.setStoreId(storeEntity.getId());
+            storeDto.setUserId(storeEntity.getUserId());
+            storeDto.setQuantity(storeEntity.getQuantity());
+            storeDto.setExpridedAt(storeEntity.getExpridedAt());
+            storeDto.setBuyAt(storeEntity.getBuyAt());
+            storeDto.setMeasure(storeEntity.getMeasure());
+            storeDto.setIngredientsId(storeEntity.getIngredientsId());
+            // Add other basic fields as needed
+
+            // Set ingredient details
             IngredientsEntity ingredientsEntity = ingredientsRepository.findById(storeEntity.getIngredient().getId())
-                    .get();
+                    .orElseThrow(() -> new RuntimeException("Ingredient not found"));
             storeDto.setIngredientName(ingredientsEntity.getName());
             storeDto.setIngredientStatus(ingredientsEntity.getIngredientStatus());
             storeDto.setIngredientImage(ingredientsEntity.getImage());
-            UserEntity userEntity = userRepository.findById(storeEntity.getUser().getId()).get();
+
+            // Set user details
+            UserEntity userEntity = userRepository.findById(storeEntity.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
             storeDto.setUserName(userEntity.getName());
+
             storeDtos.add(storeDto);
         }
         return storeDtos;
