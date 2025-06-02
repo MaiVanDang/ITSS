@@ -131,4 +131,5 @@ export interface dishIngredients {
     quantity: number;
     measure: string;
     dish: dishsProps;
+    checkQuantity: number;
 }

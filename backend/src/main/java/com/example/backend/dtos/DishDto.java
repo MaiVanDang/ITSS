@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.List;
+
 @Data
 public class DishDto {
     private Integer id;
@@ -16,7 +17,5 @@ public class DishDto {
     private LocalDate createAt;
     private LocalDate updateAt;
     private Integer favorite;
-    private List<DishIngredientsDto>  ingredients;
-
-
+    private List<DishIngredientsDto> ingredients;
 }

@@ -9,17 +9,21 @@ import com.example.backend.entities.StoreEntity;
 
 public interface StoreRepository extends JpaRepository<StoreEntity, Integer> {
 
-    List<StoreEntity> findByUserId(Integer userId);
+        List<StoreEntity> findByUserId(Integer userId);
 
-    List<StoreEntity> findByIngredientsId(Long ingredientsId);
+        List<StoreEntity> findByIngredientsId(Long ingredientsId);
 
-    StoreEntity findByIngredientsIdAndBuyAtAndExpridedAt(
-            Integer ingredientsId,
-            LocalDate buyAt,
-            LocalDate expiredAt);
+        StoreEntity findByIngredientsIdAndBuyAtAndExpridedAt(
+                        Integer ingredientsId,
+                        LocalDate buyAt,
+                        LocalDate expiredAt);
 
-    StoreEntity findByIngredientsIdAndExpridedAt(
-            Integer ingredientsId,
-            LocalDate expiredAt);
+        StoreEntity findByIngredientsIdAndExpridedAt(
+                        Integer ingredientsId,
+                        LocalDate expiredAt);
+
+        List<StoreEntity> findByUserIdAndIngredientId(
+                        Integer userId,
+                        Integer ingredientId);
 
 }

@@ -12,4 +12,5 @@ public interface FridgeRepository extends JpaRepository<FridgeEntity, Integer> {
     FridgeEntity findByGroupId(Integer groupId);
 
     List<FridgeEntity> findByUserId(Integer userId);
+
 }

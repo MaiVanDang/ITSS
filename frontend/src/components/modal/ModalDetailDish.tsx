@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { Badge, Button, Modal, Image, Table, Tabs, Tab, Form, Toast } from 'react-bootstrap';
+import { Badge, Button, Modal, Image, Table, Toast } from 'react-bootstrap';
 import Url from '../../utils/url';
 import { useEffect, useState } from 'react';
-import { shoppingProps, userInfoProps, dishIngredients } from '../../utils/interface/Interface';
+import { userInfoProps, dishIngredients } from '../../utils/interface/Interface';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faToiletPortable, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { userInfo } from '../../utils/userInfo';
 
 interface ModalDetailMarketOrderProps {
@@ -41,7 +41,6 @@ function ModalDetailMarketOrder({
     onCreateOrder,
 }: ModalDetailMarketOrderProps) {
     const [reload, setReload] = useState(0);
-    const [shopping, setShopping] = useState<shoppingProps | null>(null);
     const [dishDetail, setDishDetail] = useState<DishDetail | null>(null);
     const [showToast, setShowToast] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -78,10 +77,9 @@ function ModalDetailMarketOrder({
         console.log('Fetching order details for index:', dishId);
         try {
             setIsLoading(true);
-            const response = await axios.get(Url(`dishs/show/detail/${dishId}`));
+            const response = await axios.get(Url(`dishs/show/detail/${dishId}/${userInfo?.id}`));
             setError(null);
             setIsLoading(false);
-            console.log('Order details fetched successfully:', response.data);
             return response.data;
         } catch (error) {
             setError('Chưa lên công thức nào');
@@ -101,68 +99,6 @@ function ModalDetailMarketOrder({
         };
         fetchData();
     }, [show, reload, dishId]);
-
-    const handleChangeAttributeStatus = async (
-        status: 1 | 0 | null,
-        ingredientId: number,
-        measure: string,
-    ) => {
-        if (!shopping) return;
-        
-        if (status === 1) {
-            try {
-                await axios.put(Url(`market/remove`), {
-                    id: dishId,
-                    attributeId: ingredientId,
-                    measure,
-                });
-                setReload(Math.random());
-            } catch (error) {
-                console.log(error);
-            }
-        }
-        if (status === 0) {
-            try {
-                await axios.put(Url(`market/active`), {
-                    id: dishId,
-                    attributeId: ingredientId,
-                    measure,
-                });
-                setReload(Math.random());
-            } catch (error) {
-                console.log(error);
-            }
-        }
-    };
-
-    const handleChangeUserBuy = async (id: number, userId: string) => {
-        try {
-            await axios.put(Url(`group/attribute`), {
-                id,
-                userId: parseInt(userId),
-            });
-            setReload(Math.random());
-        } catch (error: any) {
-            console.log(error);
-            alert(error.response.data.message);
-        }
-    };
-
-    const handleAddToFridge = async (ingredientId: number, quantity: number, measure: string) => {
-        try {
-            await axios.post(Url(`fridge/ingredients`), {
-                fridgeId: fridgeId ? fridgeId : userInfo?.fridgeId,
-                ingredientId,
-                quantity,
-                measure,
-            });
-            setShowToast(true);
-            setReload(Math.random());
-        } catch (error: any) {
-            console.log(error);
-            alert(error.response.data.message);
-        }
-    };
 
     const renderNoOrderContent = () => {
         return (
@@ -234,10 +170,11 @@ function ModalDetailMarketOrder({
                                 <th>#</th>
                                 <th>Tên nguyên liệu</th>
                                 <th>Ảnh</th>
+                                <th>Loại</th>
                                 <th>Mô tả</th>
                                 <th>Số lượng</th>
                                 <th>Đơn vị tính</th>
-                                <th>Thao tác</th>
+                                <th>Trạng thái</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -258,21 +195,46 @@ function ModalDetailMarketOrder({
                                                 className="rounded"
                                             />
                                         </td>
+                                        <td className="text-center">
+                                            {ingredient.ingredient.ingredientStatus === 'INGREDIENT' ? (
+                                                <Badge pill bg="primary">
+                                                    Nguyên liệu
+                                                </Badge>
+                                            ) : ingredient.ingredient.ingredientStatus === 'FRESH_INGREDIENT' ? (
+                                                <Badge pill bg="success">
+                                                    Nguyên liệu tươi
+                                                </Badge>
+                                            ) : ingredient.ingredient.ingredientStatus === 'DRY_INGREDIENT' ? (
+                                                <Badge pill bg="secondary">
+                                                    Nguyên liệu khô
+                                                </Badge>
+                                            ) : ingredient.ingredient.ingredientStatus === 'SEASONING' ? (
+                                                <Badge pill bg="warning" className="text-dark">
+                                                    Gia vị nêm
+                                                </Badge>
+                                            ) : null}
+                                        </td>
                                         <td>{ingredient.ingredient.description}</td>
                                         <td className="text-center"><strong>{ingredient.quantity}</strong></td>
                                         <td className="text-center">{ingredient.measure}</td>
-                                        <td>
-                                            <Button
-                                                size="sm"
-                                                variant="outline-success"
-                                                onClick={() => handleAddToFridge(
-                                                    ingredient.ingredient.id,
-                                                    ingredient.quantity,
-                                                    ingredient.measure
-                                                )}
-                                            >
-                                                Thêm vào tủ lạnh
-                                            </Button>
+                                        <td className="text-center">
+                                            {ingredient.checkQuantity === 3 ? (
+                                                <Badge pill bg="success">
+                                                    Nguyên liệu có sẵn trong tủ lạnh và kho
+                                                </Badge>
+                                            ) : ingredient.checkQuantity === 2 ? (
+                                                <Badge pill bg="success">
+                                                    Nguyên liệu có sẵn trong tủ lạnh
+                                                </Badge>
+                                            ) : ingredient.checkQuantity === 1 ? (
+                                                <Badge pill bg="success">
+                                                    Nguyên liệu có sẵn trong kho
+                                                </Badge>
+                                            ) : (
+                                                <Badge pill bg="warning" className="text-dark">
+                                                    Nguyên liệu không có sẵn
+                                                </Badge>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

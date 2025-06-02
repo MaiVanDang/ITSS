@@ -5,17 +5,21 @@ import com.example.backend.dtos.DishIngredientsDto;
 import com.example.backend.dtos.IngredientsDto;
 import com.example.backend.entities.DishEntity;
 import com.example.backend.entities.DishIngredientsEntity;
+import com.example.backend.entities.FridgeEntity;
+import com.example.backend.entities.FridgeIngredientsEntity;
 import com.example.backend.entities.IngredientsEntity;
+import com.example.backend.entities.StoreEntity;
 import com.example.backend.exception.DuplicateException;
 import com.example.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.*;
 
 import static java.time.LocalDate.now;
+
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,9 @@ public class DishService {
     private final ModelMapper dishModelMapper;
     private final FavoriteRepository favoriteRepository;
     private final IngredientsRepository ingredientsRepository;
+    private final StoreRepository storeRepository;
+    private final FridgeRepository fridgeRepository;
+    private final FridgeIngredientsRepository fridgeIngredientsRepository;
 
     public List<DishDto> getAllDishes(Integer userId) {
         List<DishDto> dtos = new ArrayList<DishDto>();
@@ -59,6 +66,30 @@ public class DishService {
             ingredientsDtos.add(dishIngredientsDto);
         }
 
+        dto.setIngredients(ingredientsDtos);
+        return dto;
+    }
+
+    public DishDto getDetailDishById(Integer dishId, Integer userId) {
+        DishEntity dishEntity = dishRepository.findById(dishId)
+                .orElseThrow(() -> new RuntimeException("Dish not found"));
+        DishDto dto = dishModelMapper.map(dishEntity, DishDto.class);
+        List<DishIngredientsEntity> ingredients = dishIngredientRepository.findByDishId(dishEntity.getId());
+        List<DishIngredientsDto> ingredientsDtos = new ArrayList<>();
+
+        for (DishIngredientsEntity ingredient : ingredients) {
+            IngredientsEntity ingredientsEntity = ingredientsRepository.findById(ingredient.getIngredientsId())
+                    .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+            IngredientsDto ingredientDto = dishModelMapper.map(ingredientsEntity, IngredientsDto.class);
+            DishIngredientsDto dishIngredientsDto = new DishIngredientsDto();
+            dishIngredientsDto.setIngredient(ingredientDto);
+            dishIngredientsDto.setQuantity(ingredient.getQuantity());
+            dishIngredientsDto.setMeasure(ingredient.getMeasure());
+            int checkQuantity = checkQuantityIngredient(userId, ingredient.getIngredientsId(),
+                    ingredient.getQuantity(), ingredient.getMeasure());
+            dishIngredientsDto.setCheckQuantity(checkQuantity);
+            ingredientsDtos.add(dishIngredientsDto);
+        }
         dto.setIngredients(ingredientsDtos);
         return dto;
     }
@@ -149,6 +180,104 @@ public class DishService {
         entity.setUpdateAt(now());
         entity.setStatus(1);
         dishRepository.save(entity);
+    }
+
+    public int checkQuantityIngredient(Integer userId, Integer ingredientId, int quantity, String measure) {
+        int chekck = 0;
+        boolean isStore = false;
+        boolean isFridge = false;
+        // Kiểm tra trong nhà kho theo cá nhân
+        List<StoreEntity> storeEntity = storeRepository.findByUserIdAndIngredientId(userId, ingredientId);
+        if (storeEntity != null && !storeEntity.isEmpty()) {
+            for (StoreEntity store : storeEntity) {
+                // Chuyển đổi đơn vị đo lường nếu cần
+                int convertedQuantity = convertMeasureToQuantity(store.getMeasure(), store.getQuantity().intValue());
+                quantity = convertMeasureToQuantity(measure, quantity);
+                if (convertedQuantity >= quantity && !isExpridedAt(store.getExpridedAt())) {
+                    // Nếu số lượng trong kho đủ và chưa hết hạn
+                    isStore = true; // Tồn tại đủ số lượng trong kho
+                    break;
+                }
+            }
+        }
+
+        List<FridgeEntity> fridgeEntity = fridgeRepository.findByUserId(userId);
+        int newFridgeId = 0;
+        for (FridgeEntity fridge : fridgeEntity) {
+            if (fridge.getGroupId() == null || fridge.getGroupId() == 0) {
+                newFridgeId = fridge.getId();
+                break;
+            }
+        }
+        List<FridgeIngredientsEntity> fridgeIngredients = fridgeIngredientsRepository
+                .findByFridgeIdAndIngredientsId(newFridgeId, ingredientId);
+        if (fridgeIngredients != null && !fridgeIngredients.isEmpty()) {
+            for (FridgeIngredientsEntity fridgeIngredient : fridgeIngredients) {
+                // Chuyển đổi đơn vị đo lường nếu cần
+                int convertedQuantity = convertMeasureToQuantity(fridgeIngredient.getMeasure(),
+                        fridgeIngredient.getQuantity());
+                quantity = convertMeasureToQuantity(measure, quantity);
+                if (convertedQuantity >= quantity && !isExpridedAt(fridgeIngredient.getExprided())) {
+                    // Nếu số lượng trong tủ lạnh đủ và chưa hết hạn
+                    isFridge = true; // Tồn tại đủ số lượng trong tủ lạnh
+                    break;
+                }
+            }
+        }
+        // Nếu tồn tại ở cả 2 nơi theo cá nhân
+        if (isStore && isFridge) {
+            chekck = 3; // Tồn tại đủ số lượng trong cả kho và tủ lạnh
+        } else if (isFridge) {
+            chekck = 2; // Tồn tại đủ số lượng trong tủ lạnh
+        } else if (isStore) {
+            chekck = 1; // Tồn tại đủ số lượng trong tủ kho
+        } else {
+            chekck = 0; // Không tồn tại đủ số lượng trong cả kho và tủ lạnh
+        }
+        return chekck;
+    }
+
+    private int convertMeasureToQuantity(String measure, int quantity) {
+        // Chuyển đổi đơn vị đo lường
+        // Ví dụ: từ gram sang kg, từ ml sang lít, v.v.
+        if (measure.equals("kg")) {
+            // Chuyển đổi gram sang kg
+            quantity = quantity * 1000; // Ví dụ chuyển đổi gram sang g
+        } else if (measure.equals("tấn")) {
+            // Chuyển đổi tấn sang kg
+            quantity = quantity * 1000000; // Ví dụ chuyển đổi tấn sang g
+        } else if (measure.equals("tạ")) {
+            // Chuyển đổi tạ sang kg
+            quantity = quantity * 100000; // Ví dụ chuyển đổi tạ sang g
+        } else if (measure.equals("yến")) {
+            // Giữ nguyên nếu là gam
+            quantity = quantity * 10000; // Ví dụ chuyển đổi yến sang g
+        } else if (measure.equals("g")) {
+            // Giữ nguyên nếu là gam
+            quantity = quantity; // Không cần chuyển đổi
+        } else if (measure.equals("lít")) {
+            // Giữ nguyên nếu là lít
+            quantity = quantity * 1000; // Ví dụ chuyển đổi lít sang ml
+        } else if (measure.equals("ml")) {
+            // Giữ nguyên nếu là ml
+            quantity = quantity; // Không cần chuyển đổi
+        } else if (measure.equals("cốc")) {
+            // Giả sử 1 cốc = 240 ml
+            quantity = quantity * 240; // Ví dụ chuyển đổi cốc sang ml
+        } else if (measure.equals("thìa")) {
+            // Giả sử 1 thìa = 15 ml
+            quantity = quantity * 15; // Ví dụ chuyển đổi thìa sang ml
+        } else if (measure.equals("muỗng")) {
+            // Giả sử 1 muỗng = 10 ml
+            quantity = quantity * 10; // Ví dụ chuyển đổi muỗng sang ml
+        }
+        // Trả về số lượng tương ứng với đơn vị đo lường đã chuyển đổi
+        return quantity; // Placeholder, cần implement logic chuyển đổi thực tế
+    }
+
+    private boolean isExpridedAt(LocalDate expiredAt) {
+        // Kiểm tra xem ngày hết hạn đã qua chưa
+        return expiredAt.isBefore(now());
     }
 
 }

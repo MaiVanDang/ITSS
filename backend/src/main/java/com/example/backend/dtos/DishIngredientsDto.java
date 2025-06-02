@@ -7,4 +7,5 @@ public class DishIngredientsDto {
     IngredientsDto ingredient;
     private Integer quantity;
     private String measure;
+    private Integer checkQuantity;
 }
