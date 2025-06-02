@@ -20,10 +20,11 @@ import SignOut from '../../../sign-out/SignOut';
 import './Taskbar.scss';
 import { useSelector } from 'react-redux';
 import { isLoginSelector } from '../../../../redux/selectors';
-import { userInfo } from '../../../../utils/userInfo';
+import { getUserInfo } from '../../../../utils/userInfo';
 
 function Taskbar() {
     const isLogin = useSelector(isLoginSelector);
+    const userInfo = getUserInfo();
 
     return (
         <div className="d-flex flex-column taskbar-container h-100">
