@@ -10,11 +10,13 @@ import java.util.List;
 
 @Repository
 public interface IngredientsRepository extends JpaRepository<IngredientsEntity, Integer> {
-    IngredientsEntity findByName(String name);
-    @Query("SELECT e FROM IngredientsEntity e WHERE (:name IS NULL OR e.name LIKE %:name%) " +
-            "AND (:status IS NULL  OR e.status = :status) "
-    )
-    List<IngredientsEntity> findByFilters(@Param("name") String name,
-                                          @Param("status") Integer status);
+        IngredientsEntity findByName(String name);
+
+        @Query("SELECT e FROM IngredientsEntity e WHERE (:name IS NULL OR e.name LIKE %:name%) " +
+                        "AND (:status IS NULL  OR e.status = :status) "
+                        + "AND (:type IS NULL OR e.ingredientStatus = :type)")
+        List<IngredientsEntity> findByFilters(@Param("name") String name,
+                        @Param("status") Integer status,
+                        @Param("type") String type);
 
 }

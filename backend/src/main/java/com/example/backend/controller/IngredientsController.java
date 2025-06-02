@@ -15,16 +15,18 @@ import java.util.List;
 public class IngredientsController {
     @Autowired
     IngredientsService ingredientsService;
+
     @GetMapping("/ingredients")
     public List<IngredientsDto> getAllIngredients() {
         return ingredientsService.getAllIngredients();
     }
+
     @GetMapping("/ingredient/search")
     public List<IngredientsDto> getIngredientByFilter(
             @RequestParam(name = "name", required = false) String name,
-            @RequestParam(name = "status", required = false) Integer status
-    ) {
-        return ingredientsService.getIngredientByFilter(name,status);
+            @RequestParam(name = "status", required = false) Integer status,
+            @RequestParam(name = "type", required = false) String type) {
+        return ingredientsService.getIngredientByFilter(name, status, type);
     }
 
     @PostMapping("/ingredient")
@@ -38,13 +40,15 @@ public class IngredientsController {
         ingredientsService.activeIngredient(id);
         return "success";
     }
+
     @PutMapping("/ingredient/update/{id}")
     public String updateIngredient(
             @PathVariable Integer id,
             @RequestBody IngredientsDto ingredientsDto) {
-        ingredientsService.updateIngredient(id,ingredientsDto);
+        ingredientsService.updateIngredient(id, ingredientsDto);
         return "success";
     }
+
     @DeleteMapping("/ingredient/{id}")
     public String deleteIngredient(@PathVariable Integer id) {
         ingredientsService.deleteIngredient(id);

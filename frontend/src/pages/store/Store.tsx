@@ -1,7 +1,7 @@
-import { faShoppingCart, faCheckCircle, faRightFromBracket, faChartPie, faExclamationTriangle, faClock, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faShoppingCart, faCheckCircle, faRightFromBracket, faChartPie, faClock, faExclamationTriangle, faCheck, faFilter } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
-import { Table, Badge, Button, Toast, Modal, Row, Col, Card } from 'react-bootstrap';
+import { Table, Badge, Button, Toast, Modal, Card, Row, Col, Alert } from 'react-bootstrap';
 import axios from 'axios';
 import Url from '../../utils/url';
 import { userInfo } from '../../utils/userInfo';
@@ -16,73 +16,36 @@ import { formatDate } from '../../utils/dateHelpers';
 import { ExpiryStatusBadge } from '../../components/shared/ExpiryStatusBadge';
 import { toast } from 'react-toastify';
 
+type FilterType = {
+    expiryStatus?: 'expired' | 'aboutToExpire' | 'fresh';
+    ingredientType?: 'dry' | 'seasoning' | 'fresh' | 'other';
+};
+
 function Store() {
+    // Giữ nguyên toàn bộ state gốc
     const [purchasedItems, setPurchasedItems] = useState<StoreProps[]>([]);
     const [loading, setLoading] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success');
-
-    // Modal & quantity state
     const [selectedItem, setSelectedItem] = useState<StoreProps | null>(null);
     const [deleteQuantity, setDeleteQuantity] = useState<number>(0);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    // Thêm state mới cho filter
+    const [activeFilter, setActiveFilter] = useState<FilterType>({});
+    const [filteredItems, setFilteredItems] = useState<StoreProps[]>([]);
 
     useEffect(() => {
         fetchPurchasedItems();
     }, []);
 
-    // Hàm tính toán thống kê
-    const calculateStatistics = () => {
-        const stats = {
-            expiryStatus: {
-                expired: 0,
-                aboutToExpire: 0,
-                fresh: 0
-            },
-            ingredientType: {
-                dry: 0,
-                seasoning: 0,
-                fresh: 0,
-                other: 0
-            }
-        };
+    // Thêm useEffect để áp dụng filter
+    useEffect(() => {
+        applyFilters();
+    }, [purchasedItems, activeFilter]);
 
-        purchasedItems.forEach(item => {
-            // Thống kê theo trạng thái hạn sử dụng
-            const { status } = getExpiryStatus(item.expridedAt);
-            if (status === 'Đã hết hạn') {
-                stats.expiryStatus.expired++;
-            } else if (status === 'Sắp hết hạn') {
-                stats.expiryStatus.aboutToExpire++;
-            } else {
-                stats.expiryStatus.fresh++;
-            }
-
-            // Thống kê theo loại nguyên liệu
-            switch (item.ingredientStatus) {
-                case 'DRY_INGREDIENT':
-                    stats.ingredientType.dry++;
-                    break;
-                case 'SEASONING':
-                    stats.ingredientType.seasoning++;
-                    break;
-                case 'FRESH_INGREDIENT':
-                    stats.ingredientType.fresh++;
-                    break;
-                case 'INGREDIENT':
-                    stats.ingredientType.other++;
-                    break;
-                default:
-                    stats.ingredientType.other++;
-            }
-        });
-
-        return stats;
-    };
-
-    const stats = calculateStatistics();
-
+    // Giữ nguyên hàm fetchPurchasedItems gốc
     const fetchPurchasedItems = async () => {
         setLoading(true);
         try {
@@ -104,6 +67,54 @@ function Store() {
         }
     };
 
+    // Thêm hàm applyFilters mới
+    const applyFilters = () => {
+        let result = [...purchasedItems];
+
+        if (activeFilter.expiryStatus) {
+            result = result.filter(item => {
+                const { status } = getExpiryStatus(item.expridedAt);
+                switch (activeFilter.expiryStatus) {
+                    case 'expired': return status === 'Đã hết hạn';
+                    case 'aboutToExpire': return status === 'Sắp hết hạn';
+                    case 'fresh': return status === 'Còn hạn';
+                    default: return true;
+                }
+            });
+        }
+
+        if (activeFilter.ingredientType) {
+            result = result.filter(item => {
+                switch (activeFilter.ingredientType) {
+                    case 'dry': return item.ingredientStatus === 'DRY_INGREDIENT';
+                    case 'seasoning': return item.ingredientStatus === 'SEASONING';
+                    case 'fresh': return item.ingredientStatus === 'FRESH_INGREDIENT';
+                    case 'other': return item.ingredientStatus === 'INGREDIENT';
+                    default: return true;
+                }
+            });
+        }
+
+        setFilteredItems(result);
+    };
+
+    // Thêm hàm xử lý filter
+    const handleFilterClick = (filter: FilterType) => {
+        if (
+            (filter.expiryStatus && activeFilter.expiryStatus === filter.expiryStatus) ||
+            (filter.ingredientType && activeFilter.ingredientType === filter.ingredientType)
+        ) {
+            setActiveFilter({});
+        } else {
+            setActiveFilter(filter);
+        }
+    };
+
+    const clearAllFilters = () => {
+        setActiveFilter({});
+    };
+
+    // Giữ nguyên các hàm gốc
     const isExpired = (expirationDate?: string) => {
         if (!expirationDate) return false;
         const today = new Date();
@@ -195,6 +206,55 @@ function Store() {
         }
     };
 
+    // Thêm hàm tính toán thống kê
+    const calculateStatistics = () => {
+        const stats = {
+            expiryStatus: {
+                expired: 0,
+                aboutToExpire: 0,
+                fresh: 0
+            },
+            ingredientType: {
+                dry: 0,
+                seasoning: 0,
+                fresh: 0,
+                other: 0
+            }
+        };
+
+        purchasedItems.forEach(item => {
+            const { status } = getExpiryStatus(item.expridedAt);
+            if (status === 'Đã hết hạn') {
+                stats.expiryStatus.expired++;
+            } else if (status === 'Sắp hết hạn') {
+                stats.expiryStatus.aboutToExpire++;
+            } else {
+                stats.expiryStatus.fresh++;
+            }
+
+            switch (item.ingredientStatus) {
+                case 'DRY_INGREDIENT':
+                    stats.ingredientType.dry++;
+                    break;
+                case 'SEASONING':
+                    stats.ingredientType.seasoning++;
+                    break;
+                case 'FRESH_INGREDIENT':
+                    stats.ingredientType.fresh++;
+                    break;
+                case 'INGREDIENT':
+                    stats.ingredientType.other++;
+                    break;
+                default:
+                    stats.ingredientType.other++;
+            }
+        });
+
+        return stats;
+    };
+
+    const stats = calculateStatistics();
+
     if (loading) {
         return (
             <div className="text-center p-4">
@@ -206,230 +266,241 @@ function Store() {
         );
     }
 
+    // Sử dụng filteredItems thay vì purchasedItems trong render
+    const displayItems = filteredItems.length > 0 || Object.keys(activeFilter).length > 0 ? filteredItems : purchasedItems;
+
     return (
-        <div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2>
+        <div className="store-container">
+            {/* Phần Header */}
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="mb-0">
                     <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
                     Kho thực phẩm đã lưu trữ
                 </h2>
-                <Button variant="outline-primary" onClick={fetchPurchasedItems}>
-                    Làm mới
-                </Button>
+                <div>
+                    {Object.keys(activeFilter).length > 0 && (
+                        <Button
+                            variant="outline-secondary"
+                            className="me-2"
+                            onClick={clearAllFilters}
+                            size="sm"
+                        >
+                            Xóa bộ lọc
+                        </Button>
+                    )}
+                    <Button variant="outline-primary" onClick={fetchPurchasedItems}>
+                        Làm mới
+                    </Button>
+                </div>
             </div>
 
-            {/* Khu vực thống kê */}
-            {purchasedItems.length > 0 && (
-                <div className="mb-4">
-                    <h4 className="mb-3">
-                        <FontAwesomeIcon icon={faChartPie} className="me-2" />
+            {/* Khu vực Thống kê - được tách biệt bằng Card */}
+            <Card className="mb-4 shadow-sm">
+                <Card.Body>
+                    <h4 className="mb-4">
+                        <FontAwesomeIcon icon={faChartPie} className="me-2 text-primary" />
                         Thống kê kho thực phẩm
                     </h4>
 
-                    <Row className="mb-4">
-                        <Col md={6}>
-                            <h5 className="mb-3">Theo trạng thái hạn sử dụng</h5>
-                            <Row>
-                                <Col sm={4}>
-                                    <Card className="text-center h-100">
-                                        <Card.Body>
-                                            <Card.Title>
-                                                <FontAwesomeIcon icon={faExclamationTriangle} className="text-danger me-2" />
-                                                Hết hạn
-                                            </Card.Title>
-                                            <Card.Text className="display-6">
-                                                {stats.expiryStatus.expired}
-                                            </Card.Text>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col sm={4}>
-                                    <Card className="text-center h-100">
-                                        <Card.Body>
-                                            <Card.Title>
-                                                <FontAwesomeIcon icon={faClock} className="text-warning me-2" />
-                                                Sắp hết hạn
-                                            </Card.Title>
-                                            <Card.Text className="display-6">
-                                                {stats.expiryStatus.aboutToExpire}
-                                            </Card.Text>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col sm={4}>
-                                    <Card className="text-center h-100">
-                                        <Card.Body>
-                                            <Card.Title>
-                                                <FontAwesomeIcon icon={faCheck} className="text-success me-2" />
-                                                Còn hạn
-                                            </Card.Title>
-                                            <Card.Text className="display-6">
-                                                {stats.expiryStatus.fresh}
-                                            </Card.Text>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                            </Row>
+                    {/* Phân chia rõ 2 cột thống kê */}
+                    <Row>
+                        {/* Cột thống kê trạng thái hạn sử dụng */}
+                        <Col md={6} className="mb-3 mb-md-0">
+                            <div className="border-end pe-md-3">
+                                <h5 className="mb-3 text-center">Theo trạng thái hạn sử dụng</h5>
+                                <Row>
+                                    {[
+                                        { type: 'expired', icon: faExclamationTriangle, color: 'danger', label: 'Hết hạn' },
+                                        { type: 'aboutToExpire', icon: faClock, color: 'warning', label: 'Sắp hết hạn' },
+                                        { type: 'fresh', icon: faCheck, color: 'success', label: 'Còn hạn' }
+                                    ].map((item) => (
+                                        <Col sm={4} key={item.type}>
+                                            <Card
+                                                className={`text-center h-100 cursor-pointer ${activeFilter.expiryStatus === item.type ? 'border-primary' : ''}`}
+                                                onClick={() => handleFilterClick({ expiryStatus: item.type as any })}
+                                            >
+                                                <Card.Body>
+                                                    <Card.Title>
+                                                        <FontAwesomeIcon
+                                                            icon={activeFilter.expiryStatus === item.type ? faFilter : item.icon}
+                                                            className={`me-2 ${activeFilter.expiryStatus === item.type ? 'text-primary' : `text-${item.color}`}`}
+                                                        />
+                                                        {item.label}
+                                                    </Card.Title>
+                                                    <Card.Text className="display-6">
+                                                        {stats.expiryStatus[item.type as keyof typeof stats.expiryStatus]}
+                                                    </Card.Text>
+                                                </Card.Body>
+                                            </Card>
+                                        </Col>
+                                    ))}
+                                </Row>
+                            </div>
                         </Col>
 
+                        {/* Cột thống kê loại nguyên liệu */}
                         <Col md={6}>
-                            <h5 className="mb-3">Theo loại nguyên liệu</h5>
+                            <h5 className="mb-3 text-center">Theo loại nguyên liệu</h5>
                             <Row>
-                                <Col sm={3}>
-                                    <Card className="text-center h-100">
-                                        <Card.Body>
-                                            <Card.Title>
-                                                <Badge bg="secondary">Khô</Badge>
-                                            </Card.Title>
-                                            <Card.Text className="display-6">
-                                                {stats.ingredientType.dry}
-                                            </Card.Text>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col sm={3}>
-                                    <Card className="text-center h-100">
-                                        <Card.Body>
-                                            <Card.Title>
-                                                <Badge bg="warning">Gia vị</Badge>
-                                            </Card.Title>
-                                            <Card.Text className="display-6">
-                                                {stats.ingredientType.seasoning}
-                                            </Card.Text>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col sm={3}>
-                                    <Card className="text-center h-100">
-                                        <Card.Body>
-                                            <Card.Title>
-                                                <Badge bg="success">Tươi</Badge>
-                                            </Card.Title>
-                                            <Card.Text className="display-6">
-                                                {stats.ingredientType.fresh}
-                                            </Card.Text>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col sm={3}>
-                                    <Card className="text-center h-100">
-                                        <Card.Body>
-                                            <Card.Title>
-                                                <Badge bg="primary">Khác</Badge>
-                                            </Card.Title>
-                                            <Card.Text className="display-6">
-                                                {stats.ingredientType.other}
-                                            </Card.Text>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
+                                {[
+                                    { type: 'dry', color: 'secondary', label: 'Khô' },
+                                    { type: 'seasoning', color: 'warning', label: 'Gia vị' },
+                                    { type: 'fresh', color: 'success', label: 'Tươi' },
+                                    { type: 'other', color: 'primary', label: 'Khác' }
+                                ].map((item) => (
+                                    <Col sm={3} key={item.type}>
+                                        <Card
+                                            className={`text-center h-100 cursor-pointer ${activeFilter.ingredientType === item.type ? 'border-primary' : ''}`}
+                                            onClick={() => handleFilterClick({ ingredientType: item.type as any })}
+                                        >
+                                            <Card.Body>
+                                                <Card.Title>
+                                                    <Badge bg={activeFilter.ingredientType === item.type ? 'primary' : item.color}>
+                                                        {activeFilter.ingredientType === item.type && (
+                                                            <FontAwesomeIcon icon={faFilter} className="me-1" />
+                                                        )}
+                                                        {item.label}
+                                                    </Badge>
+                                                </Card.Title>
+                                                <Card.Text className="display-6">
+                                                    {stats.ingredientType[item.type as keyof typeof stats.ingredientType]}
+                                                </Card.Text>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
+                                ))}
                             </Row>
                         </Col>
                     </Row>
-                </div>
-            )}
+                </Card.Body>
+            </Card>
 
-            {!userInfo?.fridgeId && (
-                <div className="alert alert-warning">
-                    <strong>Cảnh báo:</strong> Không tìm thấy thông tin tủ lạnh.
-                    Vui lòng đăng nhập lại để sử dụng chức năng thêm vào tủ lạnh.
-                </div>
-            )}
+            {/* Khu vực Bảng dữ liệu - tách biệt bằng Card riêng */}
+            <Card className="shadow-sm">
+                <Card.Body>
+                    {/* Thông báo active filter */}
+                    {Object.keys(activeFilter).length > 0 && (
+                        <Alert variant="info" className="mb-3">
+                            <strong>Đang lọc:</strong>
+                            {activeFilter.expiryStatus === 'expired' && ' Thực phẩm đã hết hạn'}
+                            {activeFilter.expiryStatus === 'aboutToExpire' && ' Thực phẩm sắp hết hạn'}
+                            {activeFilter.expiryStatus === 'fresh' && ' Thực phẩm còn hạn'}
+                            {activeFilter.ingredientType === 'dry' && ' Nguyên liệu khô'}
+                            {activeFilter.ingredientType === 'seasoning' && ' Gia vị'}
+                            {activeFilter.ingredientType === 'fresh' && ' Nguyên liệu tươi'}
+                            {activeFilter.ingredientType === 'other' && ' Nguyên liệu khác'}
+                            <Button variant="link" className="p-0 ms-2" onClick={clearAllFilters}>
+                                (Bỏ lọc)
+                            </Button>
+                        </Alert>
+                    )}
 
-            {purchasedItems.length === 0 ? (
-                <div className="text-center p-4">
-                    <FontAwesomeIcon icon={faShoppingCart} size="3x" className="text-muted mb-3" />
-                    <h5 className="text-muted">Chưa có thực phẩm nào được lưu trữ</h5>
-                    <p className="text-muted">
-                        Hãy đi mua sắm và đánh dấu "lưu trữ" để thấy thực phẩm ở đây!
-                    </p>
-                </div>
-            ) : (
-                <Table hover bordered responsive>
-                    <thead className="text-center sticky-top table-dark">
-                        <tr>
-                            <th>STT</th>
-                            <th>Ảnh</th>
-                            <th>Tên thực phẩm</th>
-                            <th>Số lượng</th>
-                            <th>Đơn vị tính</th>
-                            <th>Loại</th>
-                            <th>Người mua</th>
-                            <th>Ngày mua</th>
-                            <th>Ngày hết hạn</th>
-                            <th>Trạng thái</th>
-                            <th>Thêm vào tủ lạnh</th>
-                            <th>Sử dụng</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-center">
-                        {purchasedItems.map((item, index) => {
-                            const { status, style, tooltipText } = getExpiryStatus(item.expridedAt);
+                    {/* Nội dung bảng dữ liệu */}
+                    {displayItems.length === 0 ? (
+                        <div className="text-center p-4">
+                            <FontAwesomeIcon icon={faShoppingCart} size="3x" className="text-muted mb-3" />
+                            <h5 className="text-muted">
+                                {purchasedItems.length === 0
+                                    ? 'Chưa có thực phẩm nào được lưu trữ'
+                                    : 'Không tìm thấy thực phẩm phù hợp với bộ lọc'}
+                            </h5>
+                            {purchasedItems.length > 0 && (
+                                <Button variant="outline-primary" onClick={clearAllFilters} className="mt-2">
+                                    Xóa bộ lọc
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="table-responsive">
+                            <Table hover bordered responsive>
+                                <thead className="text-center sticky-top table-dark">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Ảnh</th>
+                                        <th>Tên thực phẩm</th>
+                                        <th>Số lượng</th>
+                                        <th>Đơn vị tính</th>
+                                        <th>Loại</th>
+                                        <th>Người mua</th>
+                                        <th>Ngày mua</th>
+                                        <th>Ngày hết hạn</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thêm vào tủ lạnh</th>
+                                        <th>Sử dụng</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-center">
+                                    {displayItems.map((item, index) => {
+                                        const { status, style, tooltipText } = getExpiryStatus(item.expridedAt);
 
-                            return (
-                                <tr key={`${item.id}-${index}`} style={style} title={tooltipText}>
-                                    <td>{index + 1}</td>
-                                    <td>
-                                        <img
-                                            src={item.ingredientImage}
-                                            alt="ảnh"
-                                            style={{ height: '3rem', width: '3rem' }}
-                                        />
-                                    </td>
-                                    <td><strong>{item.ingredientName}</strong></td>
-                                    <td>{item.quantity}</td>
-                                    <td>{item.measure || 'Không rõ'}</td>
-                                    <td>{renderIngredientType(item.ingredientStatus)}</td>
-                                    <td><Badge bg="info">{item.userName}</Badge></td>
-                                    <td>{formatDate(item.buyAt)}</td>
-                                    <td>{formatDate(item.expridedAt)}</td>
-                                    <td><ExpiryStatusBadge status={status} /></td>
-                                    <td>
-                                        <Button
-                                            variant={
-                                                isExpired(item.expridedAt) ? "outline-danger" :
-                                                    !userInfo?.fridgeId ? "outline-secondary" :
-                                                        "outline-success"
-                                            }
-                                            size="sm"
-                                            onClick={() => handleAddFromStoreToFridge(item)}
-                                            disabled={isExpired(item.expridedAt) || !userInfo?.fridgeId}
-                                            title={
-                                                isExpired(item.expridedAt)
-                                                    ? "Không thể thêm thực phẩm hết hạn vào tủ lạnh"
-                                                    : !userInfo?.fridgeId
-                                                        ? "Không tìm thấy thông tin tủ lạnh"
-                                                        : "Thêm vào tủ lạnh"
-                                            }
-                                        >
-                                            <FontAwesomeIcon icon={faCheckCircle} />
-                                        </Button>
-                                    </td>
-                                    <td>
-                                        <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            title="Sử dụng / loại bỏ khỏi tủ"
-                                            onClick={() => {
-                                                const { status } = getExpiryStatus(item.expridedAt);
-                                                if (status === 'Đã hết hạn') {
-                                                    toast.warn("Nguyên liệu đã hết hạn. Vui lòng không sử dụng để đảm bảo sức khỏe.");
-                                                    return;
-                                                }
-                                                handleShowDeleteModal(item);
-                                            }}
-                                        >
-                                            <FontAwesomeIcon icon={faRightFromBracket} />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </Table>
-            )}
+                                        return (
+                                            <tr key={`${item.id}-${index}`} style={style} title={tooltipText}>
+                                                <td>{index + 1}</td>
+                                                <td>
+                                                    <img
+                                                        src={item.ingredientImage}
+                                                        alt="ảnh"
+                                                        style={{ height: '3rem', width: '3rem' }}
+                                                    />
+                                                </td>
+                                                <td><strong>{item.ingredientName}</strong></td>
+                                                <td>{item.quantity}</td>
+                                                <td>{item.measure || 'Không rõ'}</td>
+                                                <td>{renderIngredientType(item.ingredientStatus)}</td>
+                                                <td><Badge bg="info">{item.userName}</Badge></td>
+                                                <td>{formatDate(item.buyAt)}</td>
+                                                <td>{formatDate(item.expridedAt)}</td>
+                                                <td><ExpiryStatusBadge status={status} /></td>
+                                                <td>
+                                                    <Button
+                                                        variant={
+                                                            isExpired(item.expridedAt) ? "outline-danger" :
+                                                                !userInfo?.fridgeId ? "outline-secondary" :
+                                                                    "outline-success"
+                                                        }
+                                                        size="sm"
+                                                        onClick={() => handleAddFromStoreToFridge(item)}
+                                                        disabled={isExpired(item.expridedAt) || !userInfo?.fridgeId}
+                                                        title={
+                                                            isExpired(item.expridedAt)
+                                                                ? "Không thể thêm thực phẩm hết hạn vào tủ lạnh"
+                                                                : !userInfo?.fridgeId
+                                                                    ? "Không tìm thấy thông tin tủ lạnh"
+                                                                    : "Thêm vào tủ lạnh"
+                                                        }
+                                                    >
+                                                        <FontAwesomeIcon icon={faCheckCircle} />
+                                                    </Button>
+                                                </td>
+                                                <td>
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="sm"
+                                                        title="Sử dụng / loại bỏ khỏi tủ"
+                                                        onClick={() => {
+                                                            const { status } = getExpiryStatus(item.expridedAt);
+                                                            if (status === 'Đã hết hạn') {
+                                                                toast.warn("Nguyên liệu đã hết hạn. Vui lòng không sử dụng để đảm bảo sức khỏe.");
+                                                                return;
+                                                            }
+                                                            handleShowDeleteModal(item);
+                                                        }}
+                                                    >
+                                                        <FontAwesomeIcon icon={faRightFromBracket} />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </Table>
+                        </div>
+                    )}
+                </Card.Body>
+            </Card>
 
-            {/* Toast thông báo */}
+
+            {/* Giữ nguyên phần toast và modal gốc */}
             <Toast
                 onClose={() => setShowToast(false)}
                 show={showToast}
@@ -455,7 +526,6 @@ function Store() {
                 </Toast.Body>
             </Toast>
 
-            {/* Modal xóa số lượng */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Sử dụng nguyên liệu</Modal.Title>

@@ -53,14 +53,14 @@ public class IngredientsService {
         ingredientsRepository.save(entity);
     }
 
-    public List<IngredientsDto> getIngredientByFilter(String name, Integer status) {
+    public List<IngredientsDto> getIngredientByFilter(String name, Integer status, String type) {
         Integer filterStatus = null;
 
         if (status == 1 || status == 0) {
             filterStatus = status;
         }
         List<IngredientsDto> dtos = new ArrayList<IngredientsDto>();
-        List<IngredientsEntity> entities = ingredientsRepository.findByFilters(name, filterStatus);
+        List<IngredientsEntity> entities = ingredientsRepository.findByFilters(name, filterStatus, type);
         dtos = Arrays.asList(ingredientsModelMapper.map(entities, IngredientsDto[].class));
         return dtos;
     }
