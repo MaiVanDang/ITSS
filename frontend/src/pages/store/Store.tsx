@@ -1,7 +1,7 @@
-import { faShoppingCart, faCheckCircle, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+import { faShoppingCart, faCheckCircle, faRightFromBracket, faChartPie, faExclamationTriangle, faClock, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
-import { Table, Badge, Button, Toast, Modal } from 'react-bootstrap';
+import { Table, Badge, Button, Toast, Modal, Row, Col, Card } from 'react-bootstrap';
 import axios from 'axios';
 import Url from '../../utils/url';
 import { userInfo } from '../../utils/userInfo';
@@ -31,6 +31,57 @@ function Store() {
     useEffect(() => {
         fetchPurchasedItems();
     }, []);
+
+    // Hàm tính toán thống kê
+    const calculateStatistics = () => {
+        const stats = {
+            expiryStatus: {
+                expired: 0,
+                aboutToExpire: 0,
+                fresh: 0
+            },
+            ingredientType: {
+                dry: 0,
+                seasoning: 0,
+                fresh: 0,
+                other: 0
+            }
+        };
+
+        purchasedItems.forEach(item => {
+            // Thống kê theo trạng thái hạn sử dụng
+            const { status } = getExpiryStatus(item.expridedAt);
+            if (status === 'Đã hết hạn') {
+                stats.expiryStatus.expired++;
+            } else if (status === 'Sắp hết hạn') {
+                stats.expiryStatus.aboutToExpire++;
+            } else {
+                stats.expiryStatus.fresh++;
+            }
+
+            // Thống kê theo loại nguyên liệu
+            switch (item.ingredientStatus) {
+                case 'DRY_INGREDIENT':
+                    stats.ingredientType.dry++;
+                    break;
+                case 'SEASONING':
+                    stats.ingredientType.seasoning++;
+                    break;
+                case 'FRESH_INGREDIENT':
+                    stats.ingredientType.fresh++;
+                    break;
+                case 'INGREDIENT':
+                    stats.ingredientType.other++;
+                    break;
+                default:
+                    stats.ingredientType.other++;
+            }
+        });
+
+        return stats;
+    };
+
+    const stats = calculateStatistics();
 
     const fetchPurchasedItems = async () => {
         setLoading(true);
@@ -167,9 +218,120 @@ function Store() {
                 </Button>
             </div>
 
+            {/* Khu vực thống kê */}
+            {purchasedItems.length > 0 && (
+                <div className="mb-4">
+                    <h4 className="mb-3">
+                        <FontAwesomeIcon icon={faChartPie} className="me-2" />
+                        Thống kê kho thực phẩm
+                    </h4>
+
+                    <Row className="mb-4">
+                        <Col md={6}>
+                            <h5 className="mb-3">Theo trạng thái hạn sử dụng</h5>
+                            <Row>
+                                <Col sm={4}>
+                                    <Card className="text-center h-100">
+                                        <Card.Body>
+                                            <Card.Title>
+                                                <FontAwesomeIcon icon={faExclamationTriangle} className="text-danger me-2" />
+                                                Hết hạn
+                                            </Card.Title>
+                                            <Card.Text className="display-6">
+                                                {stats.expiryStatus.expired}
+                                            </Card.Text>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                                <Col sm={4}>
+                                    <Card className="text-center h-100">
+                                        <Card.Body>
+                                            <Card.Title>
+                                                <FontAwesomeIcon icon={faClock} className="text-warning me-2" />
+                                                Sắp hết hạn
+                                            </Card.Title>
+                                            <Card.Text className="display-6">
+                                                {stats.expiryStatus.aboutToExpire}
+                                            </Card.Text>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                                <Col sm={4}>
+                                    <Card className="text-center h-100">
+                                        <Card.Body>
+                                            <Card.Title>
+                                                <FontAwesomeIcon icon={faCheck} className="text-success me-2" />
+                                                Còn hạn
+                                            </Card.Title>
+                                            <Card.Text className="display-6">
+                                                {stats.expiryStatus.fresh}
+                                            </Card.Text>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                            </Row>
+                        </Col>
+
+                        <Col md={6}>
+                            <h5 className="mb-3">Theo loại nguyên liệu</h5>
+                            <Row>
+                                <Col sm={3}>
+                                    <Card className="text-center h-100">
+                                        <Card.Body>
+                                            <Card.Title>
+                                                <Badge bg="secondary">Khô</Badge>
+                                            </Card.Title>
+                                            <Card.Text className="display-6">
+                                                {stats.ingredientType.dry}
+                                            </Card.Text>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                                <Col sm={3}>
+                                    <Card className="text-center h-100">
+                                        <Card.Body>
+                                            <Card.Title>
+                                                <Badge bg="warning">Gia vị</Badge>
+                                            </Card.Title>
+                                            <Card.Text className="display-6">
+                                                {stats.ingredientType.seasoning}
+                                            </Card.Text>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                                <Col sm={3}>
+                                    <Card className="text-center h-100">
+                                        <Card.Body>
+                                            <Card.Title>
+                                                <Badge bg="success">Tươi</Badge>
+                                            </Card.Title>
+                                            <Card.Text className="display-6">
+                                                {stats.ingredientType.fresh}
+                                            </Card.Text>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                                <Col sm={3}>
+                                    <Card className="text-center h-100">
+                                        <Card.Body>
+                                            <Card.Title>
+                                                <Badge bg="primary">Khác</Badge>
+                                            </Card.Title>
+                                            <Card.Text className="display-6">
+                                                {stats.ingredientType.other}
+                                            </Card.Text>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                            </Row>
+                        </Col>
+                    </Row>
+                </div>
+            )}
+
             {!userInfo?.fridgeId && (
                 <div className="alert alert-warning">
-                    <strong>Cảnh báo:</strong> Không tìm thấy thông tin tủ lạnh. 
+                    <strong>Cảnh báo:</strong> Không tìm thấy thông tin tủ lạnh.
                     Vui lòng đăng nhập lại để sử dụng chức năng thêm vào tủ lạnh.
                 </div>
             )}

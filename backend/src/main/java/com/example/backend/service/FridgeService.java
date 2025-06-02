@@ -66,7 +66,14 @@ public class FridgeService {
     public FridgeDto getDetailUserFridge(Integer id) {
 
         // Tìm entity tủ lạnh
-        FridgeEntity entity = fridgeRepository.findByUserId(id);
+        List<FridgeEntity> fridgeEntity = fridgeRepository.findByUserId(id);
+        FridgeEntity entity = null;
+        for (FridgeEntity fridge : fridgeEntity) {
+            if (fridge.getType() == 0) {
+                entity = fridge;
+                break;
+            }
+        }
 
         // Map sang DTO
         FridgeDto dto = new FridgeDto();

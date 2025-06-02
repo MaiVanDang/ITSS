@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import Url from '../../utils/url';
 import { Badge, Button, Table, Toast } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faShareFromSquare, faShoppingCart, faStore, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faShareFromSquare, faStore, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { marketProps } from '../../utils/interface/Interface';
 import { useDispatch, useSelector } from 'react-redux';
 import { isLoginSelector, marketOrderSelector } from '../../redux/selectors';
@@ -50,7 +50,7 @@ function Market() {
         };
 
         fetchData();
-    }, [showModalDetailMarketOrder, showModalDeleteMarketOrder, showModalShareMarketOrder]);
+    }, [showModalDetailMarketOrder, showModalDeleteMarketOrder, showModalShareMarketOrder, dispatch]);
 
     // Hàm hiển thị toast
     const showToastMessage = (type: string, message: string) => {
@@ -140,7 +140,6 @@ const handleShareOrder = async (order: marketProps) => {
                 
                 // Phân loại mức độ ưu tiên
                 const hasFreshItems = unpurchasedByType.fresh.length > 0;
-                const priority = hasFreshItems ? 'cao' : 'thường';
                 const urgencyText = hasFreshItems ? ' (có nguyên liệu tươi cần mua sớm)' : '';
                 
                 showToastMessage(
@@ -216,14 +215,14 @@ const handleShareOrder = async (order: marketProps) => {
             <div className="overflow-y-scroll" style={{ height: '92vh' }}>
                 <Table hover bordered>
                     <thead className="text-center sticky-top table-dark">
-                        <tr>
-                            <th className="sticky-top border-bottom">STT</th>
-                            <th className="sticky-top border-bottom">Mã đơn</th>
-                            <th className="sticky-top border-bottom">Người tạo đơn</th>
-                            <th className="sticky-top border-bottom">Trạng thái</th>
-                            <th className="sticky-top border-bottom">Ngày tạo</th>
-                            <th className="sticky-top border-bottom">Xóa đơn</th>
-                            <th className="sticky-top border-bottom">Chia sẻ</th>
+                        <tr className="sticky-top border-bottom">
+                            <th>STT</th>
+                            <th>Mã đơn</th>
+                            <th>Người tạo đơn</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Xóa đơn</th>
+                            <th>Chia sẻ</th>
                         </tr>
                     </thead>
                     <tbody className="text-center">

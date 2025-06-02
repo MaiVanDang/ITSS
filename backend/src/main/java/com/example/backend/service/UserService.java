@@ -10,10 +10,13 @@ import com.example.backend.exception.NotFoundException;
 import com.example.backend.repository.FridgeRepository;
 import com.example.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import static java.time.LocalDate.now;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,21 +25,30 @@ public class UserService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final FridgeRepository fridgeRepository;
+
     public UserDto login(Login login) {
         UserEntity user = userRepository.findByUsername(login.getUsername());
         UserDto userDto = new UserDto();
         if (user == null) {
             throw new NotFoundException("Tên đăng nhập không đúng");
-        } else if(!(user.getPassword()).equals(login.getPassword())) {
+        } else if (!(user.getPassword()).equals(login.getPassword())) {
             throw new NotFoundException("Mật khẩu không đúng");
         } else {
-            userDto = modelMapper.map(user,UserDto.class);
-            FridgeEntity fridge = fridgeRepository.findByUserId(userDto.getId());
+            userDto = modelMapper.map(user, UserDto.class);
+            List<FridgeEntity> listFridge = fridgeRepository.findByUserId(userDto.getId());
+            FridgeEntity fridge = null;
+            for (FridgeEntity entity : listFridge) {
+                if (entity.getType() == 0) {
+                    fridge = entity;
+                    break;
+                }
+            }
             userDto.setFridgeId(fridge.getId());
         }
         return userDto;
 
     }
+
     public void register(Register register) {
         UserEntity user = userRepository.findByUsername(register.getUsername());
         if (user != null) {
@@ -61,11 +73,11 @@ public class UserService {
             fridgeRepository.save(newFridge);
         }
     }
-    public void updateInfor (UserDto userDto) {
+
+    public void updateInfor(UserDto userDto) {
         UserEntity user = userRepository.findById(userDto.getId()).get();
-        user = modelMapper.map(userDto,UserEntity.class);
+        user = modelMapper.map(userDto, UserEntity.class);
         userRepository.save(user);
     }
-
 
 }

@@ -60,16 +60,16 @@ function Fridge() {
             ) : (
                 <Table hover bordered responsive>
                     <thead className="text-center sticky-top table-dark">
-                        <tr>
-                            <th className="sticky-top border-bottom">STT</th>
-                            <th className="sticky-top border-bottom">Ảnh</th>
-                            <th className="sticky-top border-bottom">Tên nguyên liệu</th>
-                            <th className="sticky-top border-bottom">Số lượng</th>
-                            <th className="sticky-top border-bottom">Đơn vị tính</th>
-                            <th className="sticky-top border-bottom">Ngày cho vào tủ</th>
-                            <th className="sticky-top border-bottom">Ngày hết hạn</th>
-                            <th className="sticky-top border-bottom">Trạng thái</th>
-                            <th className="sticky-top border-bottom">Sử dụng</th>
+                        <tr className="sticky-top border-bottom">
+                            <th>STT</th>
+                            <th>Ảnh</th>
+                            <th>Tên nguyên liệu</th>
+                            <th>Số lượng</th>
+                            <th>Đơn vị tính</th>
+                            <th>Ngày cho vào tủ</th>
+                            <th>Ngày hết hạn</th>
+                            <th>Trạng thái</th>
+                            <th>Sử dụng</th>
                         </tr>
                     </thead>
                     <tbody className="text-center">

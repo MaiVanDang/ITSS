@@ -2,7 +2,6 @@ import {
     faArrowLeft,
     faPlus,
     faRightFromBracket,
-    faTrashCan,
     faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -22,6 +21,10 @@ import { userInfo } from '../../utils/userInfo';
 import ModalDetailMarketOrder from '../modal/ModalDetailMarketOrder';
 import ModalAddMemberToGroup from '../modal/ModalAddMemberToGroup';
 import ModalRemoveFridgeGroup from '../modal/ModalRemoveFridgeGroup';
+import { formatDate } from '../../utils/dateHelpers';
+import { ExpiryStatusBadge } from '../shared/ExpiryStatusBadge';
+import { getExpiryStatus } from '../../utils/ingredientHelpers';
+import { toast } from 'react-toastify';
 
 function GroupDetail() {
     const param = useParams();
@@ -159,8 +162,8 @@ function GroupDetail() {
                         <div>
                             <div className="overflow-y-scroll" style={{ height: '92vh' }}>
                                 <Table hover bordered>
-                                    <thead className="fs-5 ">
-                                        <tr>
+                                    <thead className="text-center sticky-top table-dark">
+                                        <tr className="sticky-top border-bottom">
                                             <th>STT</th>
                                             <th>Mã đơn</th>
                                             <th>Người tạo đơn</th>
@@ -168,7 +171,7 @@ function GroupDetail() {
                                             <th>Ngày tạo</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="text-center">
                                         {marketOrder.map((order, index) => (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
@@ -194,7 +197,7 @@ function GroupDetail() {
                                                         </Badge>
                                                     )}
                                                 </td>
-                                                <td>{order.createAt}</td>
+                                                <td>{formatDate(order.createAt)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -351,8 +354,8 @@ function GroupDetail() {
                     <Tab eventKey="fridge" title="Tủ lạnh">
                         <div className="overflow-y-scroll" style={{ height: '92vh' }}>
                             <Table hover bordered>
-                                <thead className="fs-5 ">
-                                    <tr>
+                                <thead className="text-center sticky-top table-dark">
+                                    <tr className="sticky-top border-bottom">
                                         <th>STT</th>
                                         <th>Ảnh</th>
                                         <th>Tên nguyên liệu</th>
@@ -360,10 +363,11 @@ function GroupDetail() {
                                         <th>Đơn vị tính</th>
                                         <th>Ngày cho vào tủ</th>
                                         <th>Ngày hết hạn</th>
+                                        <th>Trạng thái</th>
                                         <th>Sử dụng</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                {/* <tbody className="text-center">
                                     {fridge.ingredients?.map((item, index) => (
                                         <tr key={index}>
                                             <td>{index + 1}</td>
@@ -392,6 +396,60 @@ function GroupDetail() {
                                             </td>
                                         </tr>
                                     ))}
+                                </tbody> */}
+                                <tbody className="text-center">
+                                    {fridge.ingredients?.map((item, index) => {
+                                        const { status, style, tooltipText } = getExpiryStatus(item.exprided);
+
+                                        return (
+                                            <tr
+                                                key={index}
+                                                style={style}
+                                                title={tooltipText}
+                                            >
+                                                <td>{index + 1}</td>
+                                                <td>
+                                                    <img
+                                                        src={item.ingredient.image}
+                                                        alt="anh"
+                                                        style={{ height: '3rem', width: '3rem' }}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <strong>{item.ingredient.name}</strong>
+                                                    {status === 'expired' && (
+                                                        <div className="text-danger small mt-1">
+                                                            Hiện tại nguyên liệu đã hết hạn.<br />
+                                                            Vui lòng không sử dụng để đảm bảo sức khỏe.
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td>{item.quantity}</td>
+                                                <td>{item.measure}</td>
+                                                <td>{formatDate(item.createAt)}</td>
+                                                <td>{formatDate(item.exprided)}</td>
+                                                <td><ExpiryStatusBadge status={status} /></td>
+                                                <td className="text-center">
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="sm"
+                                                        title="Sử dụng / loại bỏ khỏi tủ"
+                                                        onClick={() => {
+                                                            const { status } = getExpiryStatus(item.exprided);
+                                                            if (status === 'Đã hết hạn') {
+                                                                toast.warn("Nguyên liệu đã hết hạn. Vui lòng không sử dụng để đảm bảo sức khỏe.");
+                                                                return;
+                                                            }
+                                                            setCurrentIngredient(item);
+                                                            setShowModalRemoveFridgeGroup(true);
+                                                        }}
+                                                    >
+                                                        <FontAwesomeIcon icon={faRightFromBracket} />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </Table>
 

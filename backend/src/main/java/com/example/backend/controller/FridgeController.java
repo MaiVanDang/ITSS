@@ -24,9 +24,9 @@ public class FridgeController {
         return fridgeService.getDetailGroupFridge(id);
     }
 
-    @GetMapping("/fridge/user/{id}")
-    public FridgeDto getAllFridgeByUser(@PathVariable Integer id) {
-        return fridgeService.getDetailUserFridge(id);
+    @GetMapping("/fridge/user/{userId}")
+    public FridgeDto getAllFridgeByUser(@PathVariable Integer userId) {
+        return fridgeService.getDetailUserFridge(userId);
     }
 
     @PutMapping("fridge/use-ingredient")

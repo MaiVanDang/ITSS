@@ -1,9 +1,7 @@
 import axios from 'axios';
 import { Button, Form, InputGroup, Modal } from 'react-bootstrap';
 import Url from '../../utils/url';
-import { useDispatch } from 'react-redux';
-import { ingredientsProps, marketProps } from '../../utils/interface/Interface';
-import { deleteMarket } from '../../pages/market/MarketSlice';
+import { ingredientsProps } from '../../utils/interface/Interface';
 import { useEffect, useState } from 'react';
 
 interface ModalRemoveFridgeGroupProps {
