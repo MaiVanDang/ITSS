@@ -1,20 +1,22 @@
-import { Button, Form } from "react-bootstrap";
-import { useDispatch } from "react-redux";
-import { Link } from "react-router-dom";
-import { login } from '../../components/Layout/DefaultLayout/Taskbar/authenSlice';
-import img from '../../images/logo.png';
-import './signin.scss';
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { Button, Form } from "react-bootstrap";
 import axios from 'axios';
+import { login } from '../../components/Layout/DefaultLayout/Taskbar/authenSlice';
 import Url from '../../utils/url';
-import { useNavigate } from 'react-router-dom';
+import './signin.scss';
 
 function SignIn() {
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const dispatch = useDispatch();
-    const handleSignIn = async () => {
+    
+    const handleSignIn = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
         try {
             const result = await axios.post(Url(`login`), {
                 username,
@@ -24,55 +26,83 @@ function SignIn() {
             dispatch(login(result.data));
             navigate('/cook');
         } catch (error: any) {
-            alert(error.response.data.message);
+            alert(error.response?.data?.message || "Login failed. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
-
-        // dispatch(login());
     };
-    return (
-        <div className="bg rounded-4" style={{ height: '100vh' }}>
-            <div className="d-flex justify-content-center flex-column align-items-center">
-                <div className="mt-5 center">
-                    <img src={img} alt="logo" className="w-100" />
-                </div>
-                <Form className="" style={{ width: '30%', marginTop: '10vh' }}>
-                    <h1 className="text-center mb-3">Đăng nhập</h1>
-                    <Form.Group className="fs-5 mb-3" controlId="ControlInput2">
-                        <Form.Label>Nhập tên người dùng</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Enter username"
-                            size="lg"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                        />
-                    </Form.Group>
-                    <Form.Group className="fs-5 mb-3" controlId="ControlInput3">
-                        <Form.Label>Nhập mật khẩu</Form.Label>
-                        <Form.Control
-                            type="password"
-                            placeholder="Enter password"
-                            size="lg"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </Form.Group>
 
-                    <div className="mt-5 text-center w-100" onClick={handleSignIn}>
-                        <Button className="fs-4 border signin_button">Đăng nhập</Button>
-                    </div>
-                    <div
-                        className="mt-4 d-flex justify-content-center"
-                        style={{ fontSize: '1.2rem' }}
-                    >
-                        <div>
-                            <span>Bạn chưa có tài khoản?</span>
-                            <Link to="/sign-up" className="signup_link ms-1">
-                                Đăng ký ngay
-                            </Link>
+    return (
+        <div className="auth-container">
+            <div className="auth-glass-card">
+                {/* Modern Logo with Animation */}
+                <div className="auth-logo">
+                    <div className="logo-icon">
+                        <div className="house"></div>
+                        <div className="cart">
+                            <div className="cart-line"></div>
+                            <div className="cart-wheel left"></div>
+                            <div className="cart-wheel right"></div>
                         </div>
                     </div>
+                    <h1 className="logo-text">Mua sắm tiện lợi</h1>
+                    <p className="logo-subtext">Quản lý nhà bếp thông minh</p>
+                </div>
+
+                {/* Auth Form */}
+                <Form onSubmit={handleSignIn} className="auth-form">
+                    <h2 className="auth-title">Chào mừng quay trở lại</h2>
+                    <p className="auth-subtitle">Đăng nhập để tiếp tục</p>
+                    
+                    <Form.Group controlId="username" className="mb-4">
+                        <Form.Label>Tên đăng nhập</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Nhập tên đăng nhập"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                            className="auth-input"
+                        />
+                    </Form.Group>
+                    
+                    <Form.Group controlId="password" className="mb-4">
+                        <Form.Label>Mật khẩu</Form.Label>
+                        <Form.Control
+                            type="password"
+                            placeholder="Nhập mật khẩu"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            className="auth-input"
+                        />
+                    </Form.Group>
+                    
+                    <Button 
+                        type="submit" 
+                        className="auth-button"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        ) : (
+                            'Đăng nhập'
+                        )}
+                    </Button>
+                    
+                    <div className="auth-footer">
+                        <span>Bạn chưa có tài khoản?</span>
+                        <Link to="/sign-up" className="auth-link">
+                            Đăng ký ngay
+                        </Link>
+                    </div>
                 </Form>
+            </div>
+            
+            {/* Background elements */}
+            <div className="bg-blobs">
+                <div className="blob-1"></div>
+                <div className="blob-2"></div>
             </div>
         </div>
     );

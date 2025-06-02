@@ -1,9 +1,261 @@
-.signin_button {
-    background: #da70d6 !important;
-    color: white;
-    width: 70%;
-    height: 70px;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    border-radius: 15px !important;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+// Variables
+$primary: #6366f1;
+$primary-dark: #4f46e5;
+$secondary: #f43f5e;
+$light: #f8fafc;
+$dark: #0f172a;
+$glass: rgba(255, 255, 255, 0.2);
+$glass-border: rgba(255, 255, 255, 0.3);
+
+// Mixins
+@mixin flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+// Keyframes
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes blob-animation {
+    0% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; }
+    50% { border-radius: 30% 60% 70% 40%/50% 60% 30% 60%; }
+    100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; }
+}
+
+// Styles
+.auth-container {
+    @include flex-center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    overflow: hidden;
+    padding: 2rem;
+}
+
+.auth-glass-card {
+    width: 100%;
+    max-width: 420px;
+    background: $glass;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 20px;
+    border: 1px solid $glass-border;
+    padding: 2.5rem;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+    z-index: 2;
+    transition: transform 0.3s ease;
+    
+    &:hover {
+        transform: translateY(-5px);
+    }
+}
+
+.auth-logo {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    
+    .logo-icon {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1.5rem;
+        animation: float 6s ease-in-out infinite;
+        
+        .house {
+            position: absolute;
+            width: 60px;
+            height: 50px;
+            background: $primary;
+            top: 20px;
+            left: 20px;
+            border-radius: 8px 8px 0 0;
+            
+            &::before {
+                content: '';
+                position: absolute;
+                top: -15px;
+                left: -5px;
+                width: 70px;
+                height: 20px;
+                background: $primary-dark;
+                clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            }
+        }
+        
+        .cart {
+            position: absolute;
+            width: 40px;
+            height: 25px;
+            background: $secondary;
+            border-radius: 3px;
+            bottom: 15px;
+            right: 10px;
+            
+            .cart-line {
+                position: absolute;
+                width: 30px;
+                height: 3px;
+                background: $light;
+                top: -10px;
+                right: -15px;
+                transform: rotate(-20deg);
+            }
+            
+            .cart-wheel {
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                background: $dark;
+                border-radius: 50%;
+                bottom: -5px;
+                
+                &.left { left: 5px; }
+                &.right { right: 5px; }
+            }
+        }
+    }
+    
+    .logo-text {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: $dark;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(90deg, $primary, $secondary);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    
+    .logo-subtext {
+        font-size: 0.9rem;
+        color: rgba($dark, 0.7);
+        margin: 0;
+    }
+}
+
+.auth-form {
+    .auth-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: $dark;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+    
+    .auth-subtitle {
+        font-size: 0.9rem;
+        color: rgba($dark, 0.7);
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .auth-input {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba($dark, 0.1);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        
+        &:focus {
+            background: white;
+            border-color: $primary;
+            box-shadow: 0 0 0 3px rgba($primary, 0.2);
+        }
+    }
+    
+    .auth-button {
+        width: 100%;
+        padding: 0.75rem;
+        background: linear-gradient(135deg, $primary, $primary-dark);
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        margin-top: 1rem;
+        transition: all 0.3s ease;
+        
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba($primary, 0.3);
+        }
+        
+        &:active {
+            transform: translateY(0);
+        }
+    }
+    
+    .auth-footer {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: rgba($dark, 0.7);
+        
+        .auth-link {
+            color: $primary;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            
+            &:hover {
+                color: $primary-dark;
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+.bg-blobs {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    overflow: hidden;
+    
+    .blob-1, .blob-2 {
+        position: absolute;
+        background: linear-gradient(135deg, rgba($primary, 0.1) 0%, rgba($secondary, 0.1) 100%);
+        animation: blob-animation 15s infinite linear;
+        filter: blur(40px);
+    }
+    
+    .blob-1 {
+        width: 300px;
+        height: 300px;
+        top: -50px;
+        right: -50px;
+    }
+    
+    .blob-2 {
+        width: 400px;
+        height: 400px;
+        bottom: -100px;
+        left: -100px;
+        animation-delay: 5s;
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 576px) {
+    .auth-container {
+        padding: 1rem;
+    }
+    
+    .auth-glass-card {
+        padding: 1.5rem;
+    }
 }
