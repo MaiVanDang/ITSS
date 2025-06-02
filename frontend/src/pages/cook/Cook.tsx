@@ -4,14 +4,14 @@ import Url from "../../utils/url";
 import { Badge, Button, Table, Toast } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faRotateLeft, faTrashCan, faHeart, faUtensils, faRefresh } from "@fortawesome/free-solid-svg-icons";
-import ModalDeleteDish from '../../components/modal/ModalDeleteDish';
-import ModalDetailDish from '../../components/modal/ModalDetailDish';
 import { dishsProps } from '../../utils/interface/Interface';
 import Search from '../../components/search/SearchCook';
+import ModalDeleteDish from '../../components/modal/ModalDeleteDish';
+import ModalDetailDish from '../../components/modal/ModalDetailDish';
+import ModalRestoreDish from '../../components/modal/ModalRestoreDish';
 import { useDispatch, useSelector } from 'react-redux';
 import { dishsSelector } from '../../redux/selectors';
 import { favoriteDish, unFavoriteDish, updateDishs } from './DishsSlice';
-import ModalRestoreDish from '../../components/modal/ModalRestoreDish';
 import { Link } from 'react-router-dom';
 import { faHeart as noHeart } from '@fortawesome/free-regular-svg-icons';
 import { userInfo } from '../../utils/userInfo';
@@ -185,7 +185,7 @@ function Cook() {
                                                 src={dish.image}
                                                 alt="anh"
                                                 style={{
-                                                    width: '3rem',
+                                                    width: '4rem',
                                                     height: '3rem',
                                                     objectFit: 'cover',
                                                     borderRadius: '0.5rem',
@@ -279,7 +279,7 @@ function Cook() {
                         setShowModalDetailDish(false);
                         setIndexCurrentDish(null);
                     }}
-                    indexOrder={indexCurrentDish}
+                    dishId={indexCurrentDish}
                 />
             )}
 

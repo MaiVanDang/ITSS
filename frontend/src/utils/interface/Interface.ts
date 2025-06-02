@@ -124,3 +124,11 @@ export interface StoreProps {
     buyAt: string;
     expridedAt: string;
 }
+
+export interface dishIngredients {
+    id: number;
+    ingredient: ingredientProps;
+    quantity: number;
+    measure: string;
+    dish: dishsProps;
+}
