@@ -1,4 +1,4 @@
-/* Cook.css */
+/* Ingredients.css */
 .store-container {
   padding: 20px;
   background-color: #f8f9fa;
@@ -70,15 +70,6 @@
 
 .table tbody tr:hover {
   background-color: #f8f9fa;
-}
-
-/* Heart icon */
-.heart-icon {
-  transition: all 0.2s ease;
-}
-
-.heart-icon:hover {
-  transform: scale(1.2);
 }
 
 /* Responsive Design */

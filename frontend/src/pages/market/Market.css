@@ -1,4 +1,4 @@
-/* Cook.css */
+/* Market.css */
 .store-container {
   padding: 20px;
   background-color: #f8f9fa;
@@ -45,7 +45,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Table styles */
+/* Table styles giống Ingredients */
 .table-responsive {
   max-height: calc(100vh - 250px);
   overflow-y: auto;
@@ -70,15 +70,6 @@
 
 .table tbody tr:hover {
   background-color: #f8f9fa;
-}
-
-/* Heart icon */
-.heart-icon {
-  transition: all 0.2s ease;
-}
-
-.heart-icon:hover {
-  transform: scale(1.2);
 }
 
 /* Responsive Design */

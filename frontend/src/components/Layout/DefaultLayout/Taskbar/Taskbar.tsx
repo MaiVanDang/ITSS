@@ -26,59 +26,64 @@ function Taskbar() {
     const isLogin = useSelector(isLoginSelector);
 
     return (
-        <div className="d-flex flex-column position-relative">
-            {/* Khung head chứa thông tin đăng nhập hay chưa */}
-            <div className="p-2 mt-2 w-100 d-flex align-items-center fs-6 ">
-                {/* Nếu chưa đăng nhập thì hiện comp đky đăng nhập */}
+        <div className="d-flex flex-column taskbar-container h-100">
+            {/* Header section */}
+            <div className="taskbar-header">
+                {/* Nếu chưa đăng nhập */}
                 {!isLogin && (
-                    <>
-                        <FontAwesomeIcon icon={faCircleUser} style={{ height: '3.2rem' }} />
-                        <Link to="/sign-up" className="taskbar_link ms-2 me-1">
-                            Đăng ký
-                        </Link>
-                        /
-                        <Link to="/sign-in" className="taskbar_link ms-1">
-                            Đăng nhập
-                        </Link>
-                    </>
+                    <div className="login-section">
+                        <FontAwesomeIcon icon={faCircleUser} className="fa-circle-user" />
+                        <div>
+                            <Link to="/sign-up" className="taskbar_link me-2">
+                                Đăng ký
+                            </Link>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>/</span>
+                            <Link to="/sign-in" className="taskbar_link ms-2">
+                                Đăng nhập
+                            </Link>
+                        </div>
+                    </div>
                 )}
-                {/* Nếu đã đăng nhập thì hiện tên, ảnh */}
+                
+                {/* Nếu đã đăng nhập */}
                 {isLogin && (
                     <>
-                        <img
-                            src={
-                                userInfo?.avatar
-                                    ? userInfo.avatar
-                                    : 'https://cdn4.iconfinder.com/data/icons/avatars-circle-2/72/133-512.png'
-                            }
-                            alt="hinhanh"
-                            className="taskbar-img"
-                        />
-                        <div className="ms-2 d-flex flex-column">
-                            <div className="fw-medium">{userInfo?.name}</div>
-                            {/* <div className="small">Sinh viên</div> */}
+                        {userInfo?.avatar ? (
+                            <img
+                                src={userInfo.avatar}
+                                alt="Avatar"
+                                className="taskbar-img"
+                            />
+                        ) : (
+                            <div className="taskbar-avatar">
+                                MVD
+                            </div>
+                        )}
+                        <div className="taskbar-user-name">
+                            {userInfo?.name || 'Mai Văn Đăng'}
+                        </div>
+                        <div className="taskbar-user-role">
+                            Quản lý bếp
                         </div>
                     </>
                 )}
             </div>
-            {/* Các thanh điều hướng */}
+
+            {/* Navigation Menu */}
             {isLogin && (
-                <div className="mb-1">
+                <div className="nav-menu flex-grow-1">
                     <NavItem text="Món ăn" icon={faUtensils} href="/cook" />
                     <NavItem text="Nguyên liệu" icon={faKitchenSet} href="/ingredients" />
                     <NavItem text="Đơn đi chợ" icon={faStore} href="/market" />
                     <NavItem text="Tủ lạnh" icon={faToiletPortable} href="/fridge" />
                     <NavItem text="Nhà kho" icon={faHouse} href="/store" />
                     <NavItem text="Xem nhóm" icon={faPeopleGroup} href="/group" />
-                    <SignOut/>
+                    
+                    <div className="mt-auto">
+                        <SignOut/>
+                    </div>
                 </div>
             )}
-
-            {/* {isLogin && (
-                <div className="mt-5 mb-5">
-                    <SignOut />
-                </div>
-            )} */}
         </div>
     );
 }

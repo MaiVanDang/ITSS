@@ -5,7 +5,8 @@ import {
   faClock,
   faExclamationTriangle,
   faCheck,
-  faFilter
+  faFilter,
+  faRefresh
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
@@ -164,126 +165,144 @@ function Fridge() {
         : fridge.ingredients || [];
 
     return (
-        <div className="fridge-container">
+        <div className="fridge-container" >
             {/* Header */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2 className="mb-0">
+            <div className="fridge-header d-flex justify-content-between align-items-center">
+                <h2>
                     <FontAwesomeIcon icon={faSnowflake} className="me-2" />
                     Tủ lạnh của tôi
                 </h2>
-                <div>
+                <div className="d-flex gap-2">
                     {Object.keys(activeFilter).length > 0 && (
                         <Button 
-                            variant="outline-secondary" 
-                            className="me-2"
-                            onClick={clearAllFilters}
+                            variant="outline-light" 
                             size="sm"
+                            onClick={clearAllFilters}
+                            className="action-btn"
                         >
+                            <FontAwesomeIcon icon={faFilter} className="me-1" />
                             Xóa bộ lọc
                         </Button>
                     )}
-                    <Button variant="outline-primary" onClick={() => window.location.reload()}>
+                    <Button 
+                        variant="outline-light" 
+                        onClick={() => window.location.reload()}
+                        className="action-btn"
+                    >
+                        <FontAwesomeIcon icon={faRefresh} className="me-1" />
                         Làm mới
                     </Button>
                 </div>
             </div>
 
-            {/* Khu vực Thống kê */}
-            {fridge.ingredients && fridge.ingredients.length > 0 && (
-                <Card className="mb-4 shadow-sm">
-                    <Card.Body>
-                        <h4 className="mb-4">
-                            <FontAwesomeIcon icon={faChartPie} className="me-2 text-primary" />
-                            Thống kê tủ lạnh
-                        </h4>
-                        
-                        <Row>
-                            {/* Cột thống kê trạng thái hạn sử dụng */}
-                            <Col md={6} className="mb-3 mb-md-0">
-                                <div className="border-end pe-md-3">
-                                    <h5 className="mb-3 text-center">Theo trạng thái hạn sử dụng</h5>
-                                    <Row>
-                                        {[
-                                            { type: 'expired', icon: faExclamationTriangle, color: 'danger', label: 'Hết hạn' },
-                                            { type: 'aboutToExpire', icon: faClock, color: 'warning', label: 'Sắp hết hạn' },
-                                            { type: 'fresh', icon: faCheck, color: 'success', label: 'Còn hạn' }
-                                        ].map((item) => (
-                                            <Col sm={4} key={item.type}>
-                                                <Card 
-                                                    className={`text-center h-100 cursor-pointer ${activeFilter.expiryStatus === item.type ? 'border-primary' : ''}`}
-                                                    onClick={() => handleFilterClick({ expiryStatus: item.type as any })}
-                                                >
-                                                    <Card.Body>
-                                                        <Card.Title>
-                                                            <FontAwesomeIcon 
-                                                                icon={activeFilter.expiryStatus === item.type ? faFilter : item.icon} 
-                                                                className={`me-2 ${activeFilter.expiryStatus === item.type ? 'text-primary' : `text-${item.color}`}`} 
-                                                            />
-                                                            {item.label}
-                                                        </Card.Title>
-                                                        <Card.Text className="display-6">
-                                                            {stats.expiryStatus[item.type as keyof typeof stats.expiryStatus]}
-                                                        </Card.Text>
-                                                    </Card.Body>
-                                                </Card>
-                                            </Col>
-                                        ))}
-                                    </Row>
-                                </div>
-                            </Col>
-
-                            {/* Cột thống kê loại nguyên liệu */}
-                            <Col md={6}>
-                                <h5 className="mb-3 text-center">Theo loại nguyên liệu</h5>
-                                <Row>
-                                    {[
-                                        { type: 'dry', color: 'secondary', label: 'Khô' },
-                                        { type: 'seasoning', color: 'warning', label: 'Gia vị' },
-                                        { type: 'fresh', color: 'success', label: 'Tươi' },
-                                        { type: 'other', color: 'primary', label: 'Khác' }
-                                    ].map((item) => (
-                                        <Col sm={3} key={item.type}>
-                                            <Card 
-                                                className={`text-center h-100 cursor-pointer ${activeFilter.ingredientType === item.type ? 'border-primary' : ''}`}
-                                                onClick={() => handleFilterClick({ ingredientType: item.type as any })}
-                                            >
-                                                <Card.Body>
-                                                    <Card.Title>
-                                                        <Badge bg={activeFilter.ingredientType === item.type ? 'primary' : item.color}>
-                                                            {activeFilter.ingredientType === item.type && (
-                                                                <FontAwesomeIcon icon={faFilter} className="me-1" />
-                                                            )}
-                                                            {item.label}
-                                                        </Badge>
-                                                    </Card.Title>
-                                                    <Card.Text className="display-6">
-                                                        {stats.ingredientType[item.type as keyof typeof stats.ingredientType]}
-                                                    </Card.Text>
-                                                </Card.Body>
-                                            </Card>
-                                        </Col>
-                                    ))}
-                                </Row>
-                            </Col>
-                        </Row>
-                    </Card.Body>
-                </Card>
-            )}
-
             {/* Thông báo hết hạn */}
             {hasExpiredItems && (
-                <Alert variant="danger" className="text-center mb-3">
+                <Alert variant="danger" className="expiry-alert text-center">
+                    <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
                     Một số nguyên liệu trong tủ lạnh đã hết hạn. Vui lòng kiểm tra và không sử dụng để đảm bảo sức khỏe.
                 </Alert>
             )}
 
+            {/* Khu vực Thống kê */}
+            {fridge.ingredients && fridge.ingredients.length > 0 && (
+                <div className="stats-section">
+                    <Card className="stats-card">
+                        <Card.Header>
+                            <FontAwesomeIcon icon={faChartPie} className="me-2" />
+                            Thống kê tủ lạnh
+                        </Card.Header>
+                        <Card.Body>
+                            <Row>
+                                {/* Cột thống kê trạng thái hạn sử dụng */}
+                                <Col lg={6} className="mb-4 mb-lg-0">
+                                    <h5 className="text-center mb-3 text-gradient">Theo trạng thái hạn sử dụng</h5>
+                                    <div className="stats-grid expiry-stats">
+                                        {[
+                                            { 
+                                                type: 'expired', 
+                                                icon: faExclamationTriangle, 
+                                                label: 'Hết hạn',
+                                                className: 'expired'
+                                            },
+                                            { 
+                                                type: 'aboutToExpire', 
+                                                icon: faClock, 
+                                                label: 'Sắp hết hạn',
+                                                className: 'aboutToExpire'
+                                            },
+                                            { 
+                                                type: 'fresh', 
+                                                icon: faCheck, 
+                                                label: 'Còn hạn',
+                                                className: 'fresh'
+                                            }
+                                        ].map((item) => (
+                                            <div
+                                                key={item.type}
+                                                className={`stat-item ${item.className} ${activeFilter.expiryStatus === item.type ? 'active' : ''}`}
+                                                onClick={() => handleFilterClick({ expiryStatus: item.type as any })}
+                                            >
+                                                <FontAwesomeIcon 
+                                                    icon={activeFilter.expiryStatus === item.type ? faFilter : item.icon} 
+                                                    className="stat-icon"
+                                                />
+                                                <div className="stat-label">{item.label}</div>
+                                                <div className="stat-number">
+                                                    {stats.expiryStatus[item.type as keyof typeof stats.expiryStatus]}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </Col>
+
+                                {/* Cột thống kê loại nguyên liệu */}
+                                <Col lg={6}>
+                                    <h5 className="text-center mb-3 text-gradient">Theo loại nguyên liệu</h5>
+                                    <div className="stats-grid ingredient-stats">
+                                        {[
+                                            { type: 'dry', label: 'Khô', color: 'secondary' },
+                                            { type: 'seasoning', label: 'Gia vị', color: 'warning' },
+                                            { type: 'fresh', label: 'Tươi', color: 'success' },
+                                            { type: 'other', label: 'Khác', color: 'primary' }
+                                        ].map((item) => (
+                                            <div
+                                                key={item.type}
+                                                className={`stat-item ${activeFilter.ingredientType === item.type ? 'active' : ''}`}
+                                                onClick={() => handleFilterClick({ ingredientType: item.type as any })}
+                                            >
+                                                <Badge 
+                                                    bg={activeFilter.ingredientType === item.type ? 'primary' : item.color}
+                                                    className="stat-icon"
+                                                    style={{ fontSize: '0.75rem' }}
+                                                >
+                                                    {activeFilter.ingredientType === item.type && (
+                                                        <FontAwesomeIcon icon={faFilter} className="me-1" />
+                                                    )}
+                                                    {item.label}
+                                                </Badge>
+                                                <div className="stat-number">
+                                                    {stats.ingredientType[item.type as keyof typeof stats.ingredientType]}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </Col>
+                            </Row>
+                        </Card.Body>
+                    </Card>
+                </div>
+            )}
+
             {/* Khu vực Bảng dữ liệu */}
-            <Card className="shadow-sm">
+            <Card className="main-content-card">
                 <Card.Body>
                     {/* Thông báo active filter */}
                     {Object.keys(activeFilter).length > 0 && (
-                        <Alert variant="info" className="mb-3">
-                            <strong>Đang lọc:</strong> 
+                        <Alert variant="info" className="filter-alert">
+                            <strong>
+                                <FontAwesomeIcon icon={faFilter} className="me-2" />
+                                Đang lọc:
+                            </strong> 
                             {activeFilter.expiryStatus === 'expired' && ' Thực phẩm đã hết hạn'}
                             {activeFilter.expiryStatus === 'aboutToExpire' && ' Thực phẩm sắp hết hạn'}
                             {activeFilter.expiryStatus === 'fresh' && ' Thực phẩm còn hạn'}
@@ -291,7 +310,7 @@ function Fridge() {
                             {activeFilter.ingredientType === 'seasoning' && ' Gia vị'}
                             {activeFilter.ingredientType === 'fresh' && ' Nguyên liệu tươi'}
                             {activeFilter.ingredientType === 'other' && ' Nguyên liệu khác'}
-                            <Button variant="link" className="p-0 ms-2" onClick={clearAllFilters}>
+                            <Button variant="link" className="p-0 ms-2 fw-bold" onClick={clearAllFilters}>
                                 (Bỏ lọc)
                             </Button>
                         </Alert>
@@ -299,86 +318,90 @@ function Fridge() {
 
                     {/* Nội dung bảng */}
                     {displayItems.length === 0 ? (
-                        <div className="text-center p-4">
-                            <FontAwesomeIcon icon={faSnowflake} size="3x" className="text-muted mb-3" />
-                            <h5 className="text-muted">
+                        <div className="empty-state">
+                            <FontAwesomeIcon icon={faSnowflake} className="empty-icon" />
+                            <h5>
                                 {(!fridge.ingredients || fridge.ingredients.length === 0) 
                                     ? 'Tủ lạnh hiện chưa có thực phẩm nào' 
                                     : 'Không tìm thấy thực phẩm phù hợp với bộ lọc'}
                             </h5>
-                            <p className="text-muted">
+                            <p>
                                 {(!fridge.ingredients || fridge.ingredients.length === 0) 
                                     ? 'Hãy thêm nguyên liệu từ kho lưu trữ để bắt đầu!'
                                     : 'Vui lòng thử lại với bộ lọc khác'}
                             </p>
                             {fridge.ingredients && fridge.ingredients.length > 0 && (
-                                <Button variant="outline-primary" onClick={clearAllFilters} className="mt-2">
+                                <Button variant="primary" onClick={clearAllFilters} className="action-btn">
+                                    <FontAwesomeIcon icon={faFilter} className="me-2" />
                                     Xóa bộ lọc
                                 </Button>
                             )}
                         </div>
                     ) : (
-                        <div className="table-responsive">
-                            <Table hover bordered className="mb-0">
-                                <thead className="text-center sticky-top table-dark">
-                                    <tr>
-                                        <th>STT</th>
-                                        <th>Ảnh</th>
-                                        <th>Tên nguyên liệu</th>
-                                        <th>Số lượng</th>
-                                        <th>Đơn vị tính</th>
-                                        <th>Ngày cho vào tủ</th>
-                                        <th>Ngày hết hạn</th>
-                                        <th>Trạng thái</th>
-                                        <th>Sử dụng</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-center">
-                                    {displayItems.map((item, index) => {
-                                        const { status, style, tooltipText } = getExpiryStatus(item.exprided);
+                        <div className="table-container">
+                            <div className="table-responsive">
+                                <Table hover className="mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style={{ width: '60px' }}>STT</th>
+                                            <th style={{ width: '80px' }}>Ảnh</th>
+                                            <th>Tên nguyên liệu</th>
+                                            <th style={{ width: '100px' }}>Số lượng</th>
+                                            <th style={{ width: '100px' }}>Đơn vị</th>
+                                            <th style={{ width: '130px' }}>Ngày thêm</th>
+                                            <th style={{ width: '130px' }}>Ngày hết hạn</th>
+                                            <th style={{ width: '120px' }}>Trạng thái</th>
+                                            <th style={{ width: '100px' }}>Sử dụng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {displayItems.map((item, index) => {
+                                            const { status, style, tooltipText } = getExpiryStatus(item.exprided);
 
-                                        return (
-                                            <tr
-                                                key={index}
-                                                style={style}
-                                                title={tooltipText}
-                                            >
-                                                <td>{index + 1}</td>
-                                                <td>
-                                                    <img
-                                                        src={item.ingredient.image}
-                                                        alt="anh"
-                                                        style={{ height: '3rem', width: '3rem' }}
-                                                    />
-                                                </td>
-                                                <td>
-                                                    <strong>{item.ingredient.name}</strong>
-                                                    {status === 'Đã hết hạn' && (
-                                                        <div className="text-danger small mt-1">
-                                                            Hiện tại nguyên liệu đã hết hạn.<br />
-                                                            Vui lòng không sử dụng để đảm bảo sức khỏe.
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td>{item.quantity}</td>
-                                                <td>{item.measure}</td>
-                                                <td>{formatDate(item.createAt)}</td>
-                                                <td>{formatDate(item.exprided)}</td>
-                                                <td><ExpiryStatusBadge status={status} /></td>
-                                                <td className="text-center">
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        size="sm"
-                                                        title="Sử dụng / loại bỏ khỏi tủ"
-                                                        onClick={() => {
-                                                            if (status === 'Đã hết hạn') {
-                                                                toast.warn("Nguyên liệu đã hết hạn. Vui lòng không sử dụng để đảm bảo sức khỏe.");
-                                                                return;
-                                                            }
-                                                            setCurrentIngredient(item);
-                                                            setShowModalRemoveFridgeGroup(true);
-                                                        }}
-                                                    >
+                                            return (
+                                                <tr
+                                                    key={index}
+                                                    style={style}
+                                                    title={tooltipText}
+                                                >
+                                                    <td className="text-center fw-bold">{index + 1}</td>
+                                                    <td className="text-center">
+                                                        <img
+                                                            src={item.ingredient.image}
+                                                            alt="Nguyên liệu"
+                                                            className="ingredient-image"
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <div className="fw-bold text-dark">{item.ingredient.name}</div>
+                                                        {status === 'Đã hết hạn' && (
+                                                            <small className="text-danger fw-medium">
+                                                                Đã hết hạn - Không nên sử dụng
+                                                            </small>
+                                                        )}
+                                                    </td>
+                                                    <td className="text-center fw-medium">{item.quantity}</td>
+                                                    <td className="text-center">{item.measure}</td>
+                                                    <td className="text-center">{formatDate(item.createAt)}</td>
+                                                    <td className="text-center">{formatDate(item.exprided)}</td>
+                                                    <td className="text-center">
+                                                        <ExpiryStatusBadge status={status} />
+                                                    </td>
+                                                    <td className="text-center">
+                                                        <Button
+                                                            variant="outline-danger"
+                                                            size="sm"
+                                                            className="action-btn"
+                                                            title="Sử dụng / loại bỏ khỏi tủ"
+                                                            onClick={() => {
+                                                                if (status === 'Đã hết hạn') {
+                                                                    toast.warn("Nguyên liệu đã hết hạn. Vui lòng không sử dụng để đảm bảo sức khỏe.");
+                                                                    return;
+                                                                }
+                                                                setCurrentIngredient(item);
+                                                                setShowModalRemoveFridgeGroup(true);
+                                                            }}
+                                                        >
                                                         <FontAwesomeIcon icon={faRightFromBracket} />
                                                     </Button>
                                                 </td>
@@ -388,6 +411,7 @@ function Fridge() {
                                 </tbody>
                             </Table>
                         </div>
+                    </div>
                     )}
                 </Card.Body>
             </Card>

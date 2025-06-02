@@ -1,17 +1,288 @@
-/* Custom styles for the Fridge table */
+/* Store.css */
+.store-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Header Section */
+.store-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.store-header h2 {
+  font-weight: 600;
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.store-header .btn {
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 8px 16px;
+}
+
+/* Statistics Cards */
+.stats-section {
+  margin-bottom: 25px;
+}
+
+.stats-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.stats-card .card-header {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  padding: 20px;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.stats-card .card-body {
+  padding: 25px 20px;
+}
+
+/* Statistics Grid */
+.stats-grid {
+  display: grid;
+  gap: 15px;
+}
+
+.expiry-stats {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.ingredient-stats {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Individual Stat Cards */
+.stat-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.stat-item.active {
+  border-color: #007bff;
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+}
+
+.stat-item .stat-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.stat-item .stat-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.stat-item .stat-number {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #212529;
+  line-height: 1;
+}
+
+/* Color variations for expiry status */
+.stat-item.expired .stat-icon { color: #dc3545; }
+.stat-item.aboutToExpire .stat-icon { color: #ffc107; }
+.stat-item.fresh .stat-icon { color: #28a745; }
+
+/* Alert Section */
+.expiry-alert {
+  border-radius: 12px;
+  border: none;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15);
+}
+
+/* Main Content Card */
+.main-content-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.main-content-card .card-body {
+  padding: 25px;
+}
+
+/* Filter Alert */
+.filter-alert {
+  border-radius: 10px;
+  border: none;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  border-left: 4px solid #17a2b8;
+}
+
+/* Table Container */
+.table-container {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.table {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.table thead th {
+  background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+  color: white;
+  border: none;
+  padding: 15px 12px;
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 15px 12px;
+  vertical-align: middle;
+  border-color: #e9ecef;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Table Images */
+.ingredient-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Action Buttons */
+.action-btn {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.empty-state .empty-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.empty-state h5 {
+  margin-bottom: 15px;
+  color: #495057;
+}
+
+.empty-state p {
+  margin-bottom: 25px;
+  font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .ingredient-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-item {
+    padding: 15px;
+  }
+  
+  .stat-item .stat-number {
+    font-size: 1.8rem;
+  }
+  
+  .empty-state {
+    padding: 40px 15px;
+  }
+  
+  .empty-state .empty-icon {
+    font-size: 3rem;
+  }
+}
+
+/* Expiry status styles */
 .expiring-soon {
-    background-color: #FFEB3B !important; /* Yellow color for expiring soon */
+  background-color: #FFEB3B !important;
 }
 
 .expired {
-    background-color: #FF5252 !important; /* Red color for expired */
+  background-color: #FF5252 !important;
 }
 
-/* Override any bootstrap styles that might conflict */
 .table-hover tbody tr.expiring-soon:hover {
-    background-color: #FFC107 !important; /* Darker yellow on hover */
+  background-color: #FFC107 !important;
 }
 
 .table-hover tbody tr.expired:hover {
-    background-color: #F44336 !important; /* Darker red on hover */
+  background-color: #F44336 !important;
 }

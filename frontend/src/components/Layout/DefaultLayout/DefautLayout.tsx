@@ -8,23 +8,22 @@ interface DefaultLayoutProps {
 
 function DefaultLayout({ children }: DefaultLayoutProps) {
     return (
-        /* <Header /> */
-
         <Container fluid className="p-0">
             <div className="d-flex bg-light" style={{ height: '100vh' }}>
                 {/* Thanh taskbar */}
                 <div
-                    className="mt-2 ms-2 px-0 border border-dark-subtle rounded-4"
+                    className="m-3"
                     style={{
-                        height: '100vh',
-                        width: '17.5vw',
-                        backgroundColor: 'var(--background-color)',
+                        height: 'calc(100vh - 24px)',
+                        width: '300px',
+                        minWidth: '280px'
                     }}
                 >
                     <Taskbar />
                 </div>
+                
                 {/* Cột content */}
-                <div className="ms-3 mt-2" style={{ height: '100vh', width: '81.5vw' }}>
+                <div className="flex-grow-1 mt-3 me-3" style={{ height: 'calc(100vh - 24px)' }}>
                     {children}
                 </div>
             </div>

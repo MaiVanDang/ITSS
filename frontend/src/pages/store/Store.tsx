@@ -1,4 +1,4 @@
-import { faShoppingCart, faCheckCircle, faRightFromBracket, faChartPie, faClock, faExclamationTriangle, faCheck, faFilter } from '@fortawesome/free-solid-svg-icons';
+import { faShoppingCart, faCheckCircle, faRightFromBracket, faChartPie, faClock, faExclamationTriangle, faCheck, faFilter, faRefresh } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
 import { Table, Badge, Button, Toast, Modal, Card, Row, Col, Alert } from 'react-bootstrap';
@@ -254,6 +254,7 @@ function Store() {
     };
 
     const stats = calculateStatistics();
+    const hasExpiredItems = stats.expiryStatus.expired > 0;
 
     if (loading) {
         return (
@@ -272,104 +273,121 @@ function Store() {
     return (
         <div className="store-container">
             {/* Phần Header */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2 className="mb-0">
+            <div className="store-header d-flex justify-content-between align-items-center">
+                <h2>
                     <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
                     Kho thực phẩm đã lưu trữ
                 </h2>
-                <div>
+                <div className="d-flex gap-2">
                     {Object.keys(activeFilter).length > 0 && (
                         <Button
-                            variant="outline-secondary"
-                            className="me-2"
-                            onClick={clearAllFilters}
+                            variant="outline-light"
                             size="sm"
+                            onClick={clearAllFilters}
+                            className="action-btn"
                         >
+                            <FontAwesomeIcon icon={faFilter} className="me-1" />
                             Xóa bộ lọc
                         </Button>
                     )}
-                    <Button variant="outline-primary" onClick={fetchPurchasedItems}>
+                    <Button
+                        variant="outline-light"
+                        onClick={fetchPurchasedItems}
+                        className="action-btn"
+                    >
+                        <FontAwesomeIcon icon={faRefresh} className="me-1" />
                         Làm mới
                     </Button>
                 </div>
             </div>
 
-            {/* Khu vực Thống kê - được tách biệt bằng Card */}
-            <Card className="mb-4 shadow-sm">
-                <Card.Body>
-                    <h4 className="mb-4">
-                        <FontAwesomeIcon icon={faChartPie} className="me-2 text-primary" />
-                        Thống kê kho thực phẩm
-                    </h4>
+            {/* Thông báo hết hạn */}
+            {hasExpiredItems && (
+                <Alert variant="danger" className="expiry-alert text-center">
+                    <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+                    Một số nguyên liệu trong tủ lạnh đã hết hạn. Vui lòng kiểm tra và không sử dụng để đảm bảo sức khỏe.
+                </Alert>
+            )}
 
-                    {/* Phân chia rõ 2 cột thống kê */}
+            {/* Khu vực Thống kê - được tách biệt bằng Card */}
+            <Card className="stats-card">
+                <Card.Header>
+                    <FontAwesomeIcon icon={faChartPie} className="me-2" />
+                    Thống kê kho thực phẩm
+                </Card.Header>
+                <Card.Body>
                     <Row>
-                        {/* Cột thống kê trạng thái hạn sử dụng */}
-                        <Col md={6} className="mb-3 mb-md-0">
-                            <div className="border-end pe-md-3">
-                                <h5 className="mb-3 text-center">Theo trạng thái hạn sử dụng</h5>
-                                <Row>
-                                    {[
-                                        { type: 'expired', icon: faExclamationTriangle, color: 'danger', label: 'Hết hạn' },
-                                        { type: 'aboutToExpire', icon: faClock, color: 'warning', label: 'Sắp hết hạn' },
-                                        { type: 'fresh', icon: faCheck, color: 'success', label: 'Còn hạn' }
-                                    ].map((item) => (
-                                        <Col sm={4} key={item.type}>
-                                            <Card
-                                                className={`text-center h-100 cursor-pointer ${activeFilter.expiryStatus === item.type ? 'border-primary' : ''}`}
-                                                onClick={() => handleFilterClick({ expiryStatus: item.type as any })}
-                                            >
-                                                <Card.Body>
-                                                    <Card.Title>
-                                                        <FontAwesomeIcon
-                                                            icon={activeFilter.expiryStatus === item.type ? faFilter : item.icon}
-                                                            className={`me-2 ${activeFilter.expiryStatus === item.type ? 'text-primary' : `text-${item.color}`}`}
-                                                        />
-                                                        {item.label}
-                                                    </Card.Title>
-                                                    <Card.Text className="display-6">
-                                                        {stats.expiryStatus[item.type as keyof typeof stats.expiryStatus]}
-                                                    </Card.Text>
-                                                </Card.Body>
-                                            </Card>
-                                        </Col>
-                                    ))}
-                                </Row>
+                        <Col lg={6} className="mb-4 mb-lg-0">
+                            <h5 className="text-center mb-3 text-gradient">Theo trạng thái hạn sử dụng</h5>
+                            <div className="stats-grid expiry-stats">
+                                {[
+                                    {
+                                        type: 'expired',
+                                        icon: faExclamationTriangle,
+                                        label: 'Hết hạn',
+                                        className: 'expired'
+                                    },
+                                    {
+                                        type: 'aboutToExpire',
+                                        icon: faClock,
+                                        label: 'Sắp hết hạn',
+                                        className: 'aboutToExpire'
+                                    },
+                                    {
+                                        type: 'fresh',
+                                        icon: faCheck,
+                                        label: 'Còn hạn',
+                                        className: 'fresh'
+                                    }
+                                ].map((item) => (
+                                    <div
+                                        key={item.type}
+                                        className={`stat-item ${item.className} ${activeFilter.expiryStatus === item.type ? 'active' : ''}`}
+                                        onClick={() => handleFilterClick({ expiryStatus: item.type as any })}
+                                    >
+                                        <FontAwesomeIcon
+                                            icon={activeFilter.expiryStatus === item.type ? faFilter : item.icon}
+                                            className="stat-icon"
+                                        />
+                                        <div className="stat-label">{item.label}</div>
+                                        <div className="stat-number">
+                                            {stats.expiryStatus[item.type as keyof typeof stats.expiryStatus]}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </Col>
 
-                        {/* Cột thống kê loại nguyên liệu */}
-                        <Col md={6}>
-                            <h5 className="mb-3 text-center">Theo loại nguyên liệu</h5>
-                            <Row>
+                        <Col lg={6}>
+                            <h5 className="text-center mb-3 text-gradient">Theo loại nguyên liệu</h5>
+                            <div className="stats-grid ingredient-stats">
                                 {[
-                                    { type: 'dry', color: 'secondary', label: 'Khô' },
-                                    { type: 'seasoning', color: 'warning', label: 'Gia vị' },
-                                    { type: 'fresh', color: 'success', label: 'Tươi' },
-                                    { type: 'other', color: 'primary', label: 'Khác' }
+                                    { type: 'dry', label: 'Khô', color: 'secondary' },
+                                    { type: 'seasoning', label: 'Gia vị', color: 'warning' },
+                                    { type: 'fresh', label: 'Tươi', color: 'success' },
+                                    { type: 'other', label: 'Khác', color: 'primary' }
                                 ].map((item) => (
-                                    <Col sm={3} key={item.type}>
-                                        <Card
-                                            className={`text-center h-100 cursor-pointer ${activeFilter.ingredientType === item.type ? 'border-primary' : ''}`}
-                                            onClick={() => handleFilterClick({ ingredientType: item.type as any })}
+                                    <div
+                                        key={item.type}
+                                        className={`stat-item ${activeFilter.ingredientType === item.type ? 'active' : ''}`}
+                                        onClick={() => handleFilterClick({ ingredientType: item.type as any })}
+                                    >
+                                        <Badge
+                                            bg={activeFilter.ingredientType === item.type ? 'primary' : item.color}
+                                            className="stat-icon"
+                                            style={{ fontSize: '0.75rem' }}
                                         >
-                                            <Card.Body>
-                                                <Card.Title>
-                                                    <Badge bg={activeFilter.ingredientType === item.type ? 'primary' : item.color}>
-                                                        {activeFilter.ingredientType === item.type && (
-                                                            <FontAwesomeIcon icon={faFilter} className="me-1" />
-                                                        )}
-                                                        {item.label}
-                                                    </Badge>
-                                                </Card.Title>
-                                                <Card.Text className="display-6">
-                                                    {stats.ingredientType[item.type as keyof typeof stats.ingredientType]}
-                                                </Card.Text>
-                                            </Card.Body>
-                                        </Card>
-                                    </Col>
+                                            {activeFilter.ingredientType === item.type && (
+                                                <FontAwesomeIcon icon={faFilter} className="me-1" />
+                                            )}
+                                            {item.label}
+                                        </Badge>
+                                        <div className="stat-number">
+                                            {stats.ingredientType[item.type as keyof typeof stats.ingredientType]}
+                                        </div>
+                                    </div>
                                 ))}
-                            </Row>
+                            </div>
                         </Col>
                     </Row>
                 </Card.Body>
@@ -397,15 +415,21 @@ function Store() {
 
                     {/* Nội dung bảng dữ liệu */}
                     {displayItems.length === 0 ? (
-                        <div className="text-center p-4">
-                            <FontAwesomeIcon icon={faShoppingCart} size="3x" className="text-muted mb-3" />
-                            <h5 className="text-muted">
+                        <div className="empty-state">
+                            <FontAwesomeIcon icon={faShoppingCart} className="empty-icon" />
+                            <h5>
                                 {purchasedItems.length === 0
                                     ? 'Chưa có thực phẩm nào được lưu trữ'
                                     : 'Không tìm thấy thực phẩm phù hợp với bộ lọc'}
                             </h5>
+                            <p>
+                                {purchasedItems.length === 0
+                                    ? 'Hãy thêm nguyên liệu từ thị trường để bắt đầu!'
+                                    : 'Vui lòng thử lại với bộ lọc khác'}
+                            </p>
                             {purchasedItems.length > 0 && (
-                                <Button variant="outline-primary" onClick={clearAllFilters} className="mt-2">
+                                <Button variant="primary" onClick={clearAllFilters} className="action-btn">
+                                    <FontAwesomeIcon icon={faFilter} className="me-2" />
                                     Xóa bộ lọc
                                 </Button>
                             )}
@@ -498,7 +522,6 @@ function Store() {
                     )}
                 </Card.Body>
             </Card>
-
 
             {/* Giữ nguyên phần toast và modal gốc */}
             <Toast
