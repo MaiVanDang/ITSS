@@ -380,7 +380,7 @@ function Fridge() {
                                                             </small>
                                                         )}
                                                     </td>
-                                                    <td className="text-center fw-medium">{item.quantity}</td>
+                                                    <td className="text-center fw-medium">{item.quantityDouble}</td>
                                                     <td className="text-center">{item.measure}</td>
                                                     <td className="text-center">{formatDate(item.createAt)}</td>
                                                     <td className="text-center">{formatDate(item.exprided)}</td>

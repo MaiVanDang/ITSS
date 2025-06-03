@@ -22,4 +22,5 @@ public class StoreDto {
     private String userName;
     private String ingredientImage;
     private String ingredientStatus;
+    private Double quantityDouble;
 }

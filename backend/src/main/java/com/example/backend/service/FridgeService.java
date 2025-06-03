@@ -98,6 +98,9 @@ public class FridgeService {
             IngredientsEntity ingredient = ingredientRepository.findById(ingredientFridge.getIngredientsId()).get();
             IngredientsDto ingredientsDto = modelMapper.map(ingredient, IngredientsDto.class);
             FridgeIngredientsDto fridgeDto = modelMapper.map(ingredientFridge, FridgeIngredientsDto.class);
+            // Chuyển đổi đơn vị đo lường sang số lượng
+            fridgeDto.setQuantityDouble(convertMeasureToQuantityResponse(ingredientFridge.getMeasure(),
+                    ingredientFridge.getQuantity()));
             fridgeDto.setIngredient(ingredientsDto);
             ingredientsDtos.add(fridgeDto);
         }
@@ -278,4 +281,24 @@ public class FridgeService {
             fridgeIngredientsRepository.deleteById(entity.getId());
         }
     }
+
+    private Double convertMeasureToQuantityResponse(String measure, int quantity) {
+        double quantityDouble = (double) quantity;
+
+        if (measure.equals("kg")) {
+            // Chuyển đổi gram sang kg
+            quantityDouble = (double) quantity / 1000;
+        } else if (measure.equals("lít")) {
+            // Chuyển đổi ml sang lít
+            quantityDouble = (double) quantity / 1000;
+        } else if (measure.equals("chai")) {
+            // Giả sử chai là 1000ml
+            quantityDouble = ((double) quantity) / 1000;
+        } else {
+            // Giả sử các đơn vị khác không cần chuyển đổi
+            quantityDouble = (double) quantity;
+        }
+        return quantityDouble;
+    }
+
 }

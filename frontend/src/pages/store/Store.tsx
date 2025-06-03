@@ -29,6 +29,7 @@ function Store() {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success');
     const [selectedItem, setSelectedItem] = useState<StoreProps | null>(null);
+    const [deleteInput, setDeleteInput] = useState<string>('');
     const [deleteQuantity, setDeleteQuantity] = useState<number>(0);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -137,16 +138,73 @@ function Store() {
     };
 
     const removeIngredientFromStore = async () => {
-        if (!selectedItem) return;
+        if (!selectedItem || !deleteInput) return;
+
+        // Tách số lượng và đơn vị từ chuỗi nhập
+        const match = deleteInput.match(/^(\d+\.?\d*)\s*(.*)$/);
+
+        if (!match) {
+            showToastMessage(TOAST_TYPES.DANGER, 'Định dạng không hợp lệ. Ví dụ: 100 gram');
+            return;
+        }
+
+        const quantity = parseFloat(match[1]);
+        const unit = match[2].trim() || selectedItem.measure || 'đơn vị';
+
+        // Chuyển đổi đơn vị đo lường nếu cần
+        const convertedMeasure = convertMeasure(unit, quantity);
+        // Kiểm tra số lượng sau khi đã chuyển đổi
+        if (quantity <= 0) {
+            showToastMessage(TOAST_TYPES.DANGER, 'Số lượng phải lớn hơn 0');
+            return;
+        
+        }
+        if (typeof convertedMeasure === 'number' && convertedMeasure > selectedItem.quantity) {
+            showToastMessage(TOAST_TYPES.DANGER, `Không thể sử dụng quá số lượng hiện có: ${selectedItem.quantityDouble} ${selectedItem.measure || 'đơn vị'}`);
+            return;
+        }
 
         try {
-            await axios.delete(Url(`market/purchased-items/${selectedItem.storeId}/${deleteQuantity}`));
-            showToastMessage(TOAST_TYPES.SUCCESS, 'Đã loại bỏ thực phẩm khỏi kho lưu trữ');
+            await axios.delete(Url(`market/purchased-items/${selectedItem.storeId}`), {
+                data: {
+                    quantity: quantity,
+                    unit: unit
+                }
+            });
+
+            showToastMessage(TOAST_TYPES.SUCCESS, `Đã sử dụng ${quantity} ${unit} ${selectedItem.ingredientName}`);
             setShowDeleteModal(false);
             fetchPurchasedItems();
         } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Không thể loại bỏ thực phẩm khỏi kho lưu trữ';
+            const errorMessage = error.response?.data?.message || 'Không thể sử dụng nguyên liệu';
             showToastMessage(TOAST_TYPES.DANGER, errorMessage);
+        }
+    };
+
+    const convertMeasure = (measure?: string, quantity?: number) => {
+        switch (measure?.toLowerCase()) {
+            case 'tấn':
+                return (quantity ?? 0) * 1000000;
+            case 'tạ':
+                return (quantity ?? 0) * 100000;
+            case 'yến':
+                return (quantity ?? 0) * 10000;
+            case 'kg':
+                return (quantity ?? 0) * 1000;
+            case 'g':
+                return (quantity ?? 0);
+            case 'lít':
+                return (quantity ?? 0) * 1000;
+            case 'cốc':
+                return (quantity ?? 0) * 240; // Giả sử 1 cốc = 240 ml
+            case 'thìa':
+                return (quantity ?? 0) * 15; // Giả sử 1 thìa = 15 ml
+            case 'muỗng':
+                return (quantity ?? 0) * 10; // Giả sử 1 muỗng = 10 ml
+            case 'chai':
+                return (quantity ?? 0) * 1000; // Giả sử 1 chai = 1000 ml
+            default:
+                return `${quantity ?? 0} ${measure || 'đơn vị'}`;
         }
     };
 
@@ -468,7 +526,7 @@ function Store() {
                                                     />
                                                 </td>
                                                 <td><strong>{item.ingredientName}</strong></td>
-                                                <td>{item.quantity}</td>
+                                                <td>{item.quantityDouble}</td>
                                                 <td>{item.measure || 'Không rõ'}</td>
                                                 <td>{renderIngredientType(item.ingredientStatus)}</td>
                                                 <td><Badge bg="info">{item.userName}</Badge></td>
@@ -560,17 +618,16 @@ function Store() {
                                 Bạn muốn sử dụng <strong>{selectedItem.ingredientName}</strong> ?
                             </p>
                             <div className="mb-3">
-                                <label htmlFor="deleteQuantity" className="form-label">
-                                    Nhập số lượng cần sử dụng (tối đa: {selectedItem.quantity}):
+                                <label htmlFor="deleteInput" className="form-label">
+                                    Nhập số lượng và đơn vị cần sử dụng (ví dụ: 100 gram, 1 kg, 2 muỗng canh):
                                 </label>
                                 <input
-                                    type="number"
-                                    id="deleteQuantity"
+                                    type="text"
+                                    id="deleteInput"
                                     className="form-control"
-                                    value={deleteQuantity}
-                                    min={1}
-                                    max={selectedItem.quantity}
-                                    onChange={(e) => setDeleteQuantity(Number(e.target.value))}
+                                    value={deleteInput}
+                                    onChange={(e) => setDeleteInput(e.target.value)}
+                                    placeholder={`Tối đa: ${selectedItem.quantityDouble} ${selectedItem.measure || 'đơn vị'}`}
                                 />
                             </div>
                         </>
@@ -581,9 +638,9 @@ function Store() {
                         Hủy
                     </Button>
                     <Button
-                        variant="danger"
+                        variant="success"
                         onClick={removeIngredientFromStore}
-                        disabled={deleteQuantity <= 0 || deleteQuantity > (selectedItem?.quantity ?? 0)}
+                        disabled={!deleteInput}
                     >
                         Xác nhận sử dụng
                     </Button>

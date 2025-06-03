@@ -252,15 +252,8 @@ public class DishService {
         } else if (measure.equals("yến")) {
             // Giữ nguyên nếu là gam
             quantity = quantity * 10000; // Ví dụ chuyển đổi yến sang g
-        } else if (measure.equals("g")) {
-            // Giữ nguyên nếu là gam
-            quantity = quantity; // Không cần chuyển đổi
         } else if (measure.equals("lít")) {
-            // Giữ nguyên nếu là lít
             quantity = quantity * 1000; // Ví dụ chuyển đổi lít sang ml
-        } else if (measure.equals("ml")) {
-            // Giữ nguyên nếu là ml
-            quantity = quantity; // Không cần chuyển đổi
         } else if (measure.equals("cốc")) {
             // Giả sử 1 cốc = 240 ml
             quantity = quantity * 240; // Ví dụ chuyển đổi cốc sang ml
@@ -270,9 +263,38 @@ public class DishService {
         } else if (measure.equals("muỗng")) {
             // Giả sử 1 muỗng = 10 ml
             quantity = quantity * 10; // Ví dụ chuyển đổi muỗng sang ml
+        } else if (measure.equals("chai")) {
+            quantity = quantity * 1000; // Giả sử 1 chai = 1000 ml
         }
         // Trả về số lượng tương ứng với đơn vị đo lường đã chuyển đổi
         return quantity; // Placeholder, cần implement logic chuyển đổi thực tế
+    }
+
+    private Double convertMeasureToQuantityResponse(String measure, int quantity) {
+        // Chuyển đổi đơn vị đo lường cho phản hồi
+        // Ví dụ: từ gram sang kg, từ ml sang lít, v.v.
+        double quantityDouble = (double) quantity;
+
+        if (measure.equals("kg")) {
+            // Giữ nguyên nếu là kg
+            quantityDouble = (double) quantity; // Không cần chuyển đổi
+        } else if (measure.equals("g")) {
+            // Chuyển đổi gram sang kg
+            quantityDouble = ((double) quantity) / 1000; // Ví dụ chuyển đổi g sang kg
+        } else if (measure.equals("lít")) {
+            // Giữ nguyên nếu là lít
+            quantityDouble = (double) quantity; // Không cần chuyển đổi
+        } else if (measure.equals("ml")) {
+            // Chuyển đổi ml sang lít
+            quantityDouble = ((double) quantity) / 1000; // Ví dụ chuyển đổi ml sang lít
+        } else if (measure.equals("cốc")) {
+            // Giả sử 1 cốc = 240 ml
+            quantityDouble = ((double) quantity) / 240; // Ví dụ chuyển đổi cốc sang lít
+        } else if (measure.equals("chai")) {
+            quantityDouble = ((double) quantity) / 1000; // Giả sử 1 chai = 1000 ml
+        }
+        // Trả về số lượng tương ứng với đơn vị đo lường đã chuyển đổi
+        return quantityDouble; // Placeholder, cần implement logic chuyển đổi thực tế
     }
 
     private boolean isExpridedAt(LocalDate expiredAt) {

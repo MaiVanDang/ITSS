@@ -12,4 +12,5 @@ public class FridgeIngredientsDto {
     private LocalDate exprided;
     private String measure;
     private LocalDate createAt;
+    private double quantityDouble;
 }

@@ -92,12 +92,26 @@ public class ShoppingController {
         return response;
     }
 
-    @DeleteMapping("/market/purchased-items/{storeId}/{quantity}")
-    public String deletePurchasedItem(
+    @DeleteMapping("/market/purchased-items/{storeId}")
+    public ResponseEntity<String> deletePurchasedItem(
             @PathVariable Integer storeId,
-            @PathVariable Integer quantity) {
-        System.out.println("Deleting purchased item with storeId: " + storeId + " and quantity: " + quantity);
-        shoppingService.deleteStoreByUser(storeId, quantity);
-        return "success";
+            @RequestBody Map<String, Object> requestBody) {
+
+        try {
+            // Lấy quantity và unit từ request body
+            Number quantity = (Number) requestBody.get("quantity");
+            String unit = (String) requestBody.get("unit");
+
+            // Kiểm tra dữ liệu hợp lệ
+            if (quantity == null || unit == null) {
+                return ResponseEntity.badRequest().body("Thiếu thông tin quantity hoặc unit");
+            }
+
+            shoppingService.deleteStoreByUser(storeId, quantity.doubleValue(), unit);
+            return ResponseEntity.ok("Đã sử dụng " + quantity + " " + unit + " thành công");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Lỗi khi xử lý: " + e.getMessage());
+        }
     }
+
 }

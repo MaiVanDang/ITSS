@@ -5,6 +5,7 @@ export interface ingredientsProps {
     measure: string;
     exprided?: string;
     createAt?: string;
+    quantityDouble: number;
 }
 export interface ingredientProps {
     id: number;
@@ -120,6 +121,7 @@ export interface StoreProps {
     userId:number;
     userName: string;
     measure: string;
+    quantityDouble: number;
     quantity : number;
     buyAt: string;
     expridedAt: string;

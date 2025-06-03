@@ -377,7 +377,6 @@ public class ShoppingService {
         return shoppingDtos;
     }
 
-    // public void addBuyMember()
     public List<String> getAllIngredientsMeasure() {
         return attributeRepository.findDistinctMeasure();
     }
@@ -389,24 +388,22 @@ public class ShoppingService {
         for (StoreEntity storeEntity : storeEntities) {
             StoreDto storeDto = new StoreDto();
 
-            // Map basic store fields manually
             storeDto.setStoreId(storeEntity.getId());
             storeDto.setUserId(storeEntity.getUserId());
             storeDto.setQuantity(storeEntity.getQuantity());
+            storeDto.setQuantityDouble(convertMeasureToQuantityResponse(storeEntity.getMeasure(),
+                    storeEntity.getQuantity().intValue()));
             storeDto.setExpridedAt(storeEntity.getExpridedAt());
             storeDto.setBuyAt(storeEntity.getBuyAt());
             storeDto.setMeasure(storeEntity.getMeasure());
             storeDto.setIngredientsId(storeEntity.getIngredientsId());
-            // Add other basic fields as needed
 
-            // Set ingredient details
             IngredientsEntity ingredientsEntity = ingredientsRepository.findById(storeEntity.getIngredient().getId())
                     .orElseThrow(() -> new RuntimeException("Ingredient not found"));
             storeDto.setIngredientName(ingredientsEntity.getName());
             storeDto.setIngredientStatus(ingredientsEntity.getIngredientStatus());
             storeDto.setIngredientImage(ingredientsEntity.getImage());
 
-            // Set user details
             UserEntity userEntity = userRepository.findById(storeEntity.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
             storeDto.setUserName(userEntity.getName());
@@ -416,10 +413,12 @@ public class ShoppingService {
         return storeDtos;
     }
 
-    public void deleteStoreByUser(Integer StoreId, Integer quantity) {
+    public void deleteStoreByUser(Integer StoreId, Double quantityDouble, String unit) {
         StoreEntity storeEntities = storeRepository.findById(StoreId)
                 .orElseThrow(
                         () -> new NotFoundException("Không tìm thấy dữ liệu trong bảng Store với StoreId: " + StoreId));
+        // Chuyển đổi đơn vị đo lường
+        Integer quantity = convertMeasureToQuantity(unit, quantityDouble);
         if (storeEntities.getQuantity().compareTo(BigDecimal.valueOf(quantity)) < 0) {
             throw new NotFoundException("Số lượng trong kho không đủ để xóa: " + storeEntities.getQuantity());
         }
@@ -432,4 +431,63 @@ public class ShoppingService {
             storeRepository.save(storeEntities);
         }
     }
+
+    private Double convertMeasureToQuantityResponse(String measure, int quantity) {
+        double quantityDouble = (double) quantity;
+
+        if (measure.equals("kg")) {
+            // Chuyển đổi gram sang kg
+            quantityDouble = (double) quantity / 1000;
+        } else if (measure.equals("lít")) {
+            // Chuyển đổi ml sang lít
+            quantityDouble = (double) quantity / 1000;
+        } else if (measure.equals("chai")) {
+            // Giả sử chai là 1000ml
+            quantityDouble = ((double) quantity) / 1000;
+        } else {
+            // Giả sử các đơn vị khác không cần chuyển đổi
+            quantityDouble = (double) quantity;
+        }
+        return quantityDouble;
+    }
+
+    private int convertMeasureToQuantity(String measure, Double quantityDouble) {
+        int quantity = 0;
+        // Chuyển đổi đơn vị đo lường
+        // Ví dụ: từ gram sang kg, từ ml sang lít, v.v.
+        if (measure.equals("kg")) {
+            // Chuyển đổi gram sang kg
+            quantity = (int) (quantityDouble * 1000); // Ví dụ chuyển đổi gram sang g
+        } else if (measure.equals("tấn")) {
+            // Chuyển đổi tấn sang kg
+            quantity = (int) (quantityDouble * 1000000); // Ví dụ chuyển đổi tấn sang g
+        } else if (measure.equals("tạ")) {
+            // Chuyển đổi tạ sang kg
+            quantity = (int) (quantityDouble * 100000); // Ví dụ chuyển đổi tạ sang g
+        } else if (measure.equals("yến")) {
+            // Chuyển đổi yến sang kg
+            quantity = (int) (quantityDouble * 10000); // Ví dụ chuyển đổi yến sang g
+        } else if (measure.equals("lít")) {
+            // Chuyển đổi từ lít sang ml
+            quantity = (int) (quantityDouble * 1000); // Ví dụ chuyển đổi lít sang ml
+        } else if (measure.equals("cốc")) {
+            // Giả sử 1 cốc = 240 ml
+            quantity = (int) (quantityDouble * 240); // Ví dụ chuyển đổi cốc sang ml
+        } else if (measure.equals("thìa")) {
+            // Giả sử 1 thìa = 15 ml
+            quantity = (int) (quantityDouble * 15); // Ví dụ chuyển đổi thìa sang ml
+        } else if (measure.equals("muỗng")) {
+            // Giả sử 1 muỗng = 10 ml
+            quantity = (int) (quantityDouble * 10); // Ví dụ chuyển đổi muỗng sang ml
+        } else if (measure.equals("chai")) {
+            // Giả sử 1 chai = 1000 ml
+            quantity = (int) (quantityDouble * 1000); // Ví dụ chuyển đổi chai sang ml
+        } else {
+            // Giả sử các đơn vị khác không cần chuyển đổi
+            quantity = (int) Math.round(quantityDouble); // Làm tròn về số nguyên
+        }
+        // Trả về số lượng tương ứng với đơn vị đo lường đã chuyển đổi
+        return quantity; // Placeholder, cần implement logic chuyển đổi thực tế
+    }
+
 }
