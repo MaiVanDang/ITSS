@@ -158,6 +158,20 @@ function Fridge() {
         return stats;
     };
 
+    const handleSuccess = () => {
+        // Gọi lại API để cập nhật danh sách
+        const fetchApiGroupFridge = async () => {
+            try {
+                const results = await axios.get(Url(`fridge/user/${userInfo?.id}`));
+                setFridge(results.data);
+                setFilteredIngredients(results.data.ingredients || []);
+            } catch (error: any) {
+                toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi tải dữ liệu.");
+            }
+        };
+        fetchApiGroupFridge();
+    };
+
     const stats = calculateStatistics();
     const hasExpiredItems = stats.expiryStatus.expired > 0;
     const displayItems = filteredIngredients.length > 0 || Object.keys(activeFilter).length > 0 
@@ -422,6 +436,7 @@ function Fridge() {
                     show={showModalRemoveFridgeGroup}
                     hide={() => setShowModalRemoveFridgeGroup(false)}
                     ingredient={currentIngredient}
+                    onSuccess={handleSuccess} // Thêm callback khi xóa thành công
                 />
             )}
         </div>

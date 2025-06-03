@@ -109,12 +109,16 @@ public class FridgeService {
         return dto;
     }
 
-    public void useIngredient(Integer fridgeIngredientId, Integer quantityUsed) {
+    public void useIngredient(Integer fridgeIngredientId, Double quantityDouble, String unit) {
         FridgeIngredientsEntity entity = fridgeIngredientsRepository.findById(fridgeIngredientId).get();
-        if (entity.getQuantity() < quantityUsed) {
-            throw new NotCanDoException("Trong tủ lạnh chỉ còn " + entity.getQuantity() + " " + entity.getMeasure());
+        // Chuyển đổi đơn vị đo lường
+        Integer quantity = convertMeasureToQuantity(unit, quantityDouble);
+        // Kiểm tra số lượng có đủ không
+        if (entity.getQuantity() < quantity) {
+            throw new NotCanDoException("Số lượng nguyên liệu không đủ");
         }
-        entity.setQuantity(entity.getQuantity() - quantityUsed);
+        // Cập nhật số lượng
+        entity.setQuantity(entity.getQuantity() - quantity);
         fridgeIngredientsRepository.save(entity);
     }
 
@@ -299,6 +303,45 @@ public class FridgeService {
             quantityDouble = (double) quantity;
         }
         return quantityDouble;
+    }
+
+    private int convertMeasureToQuantity(String measure, Double quantityDouble) {
+        int quantity = 0;
+        // Chuyển đổi đơn vị đo lường
+        // Ví dụ: từ gram sang kg, từ ml sang lít, v.v.
+        if (measure.equals("kg")) {
+            // Chuyển đổi gram sang kg
+            quantity = (int) (quantityDouble * 1000); // Ví dụ chuyển đổi gram sang g
+        } else if (measure.equals("tấn")) {
+            // Chuyển đổi tấn sang kg
+            quantity = (int) (quantityDouble * 1000000); // Ví dụ chuyển đổi tấn sang g
+        } else if (measure.equals("tạ")) {
+            // Chuyển đổi tạ sang kg
+            quantity = (int) (quantityDouble * 100000); // Ví dụ chuyển đổi tạ sang g
+        } else if (measure.equals("yến")) {
+            // Chuyển đổi yến sang kg
+            quantity = (int) (quantityDouble * 10000); // Ví dụ chuyển đổi yến sang g
+        } else if (measure.equals("lít")) {
+            // Chuyển đổi từ lít sang ml
+            quantity = (int) (quantityDouble * 1000); // Ví dụ chuyển đổi lít sang ml
+        } else if (measure.equals("cốc")) {
+            // Giả sử 1 cốc = 240 ml
+            quantity = (int) (quantityDouble * 240); // Ví dụ chuyển đổi cốc sang ml
+        } else if (measure.equals("thìa")) {
+            // Giả sử 1 thìa = 15 ml
+            quantity = (int) (quantityDouble * 15); // Ví dụ chuyển đổi thìa sang ml
+        } else if (measure.equals("muỗng")) {
+            // Giả sử 1 muỗng = 10 ml
+            quantity = (int) (quantityDouble * 10); // Ví dụ chuyển đổi muỗng sang ml
+        } else if (measure.equals("chai")) {
+            // Giả sử 1 chai = 1000 ml
+            quantity = (int) (quantityDouble * 1000); // Ví dụ chuyển đổi chai sang ml
+        } else {
+            // Giả sử các đơn vị khác không cần chuyển đổi
+            quantity = (int) Math.round(quantityDouble); // Làm tròn về số nguyên
+        }
+        // Trả về số lượng tương ứng với đơn vị đo lường đã chuyển đổi
+        return quantity; // Placeholder, cần implement logic chuyển đổi thực tế
     }
 
 }

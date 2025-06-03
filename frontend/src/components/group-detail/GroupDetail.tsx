@@ -91,7 +91,6 @@ function GroupDetail() {
         showToast,
         showModalDetailMarketOrder,
         showModalAddMember,
-        showModalRemoveFridgeGroup,
     ]);
 
     const handleDeleteMember = async (memberId: number) => {
@@ -145,6 +144,18 @@ function GroupDetail() {
             alert(error.response.data.message);
             console.log(error);
         }
+    };
+
+    const handleSuccess = () => {
+        const fetchApiGroupFridge = async () => {
+            try {
+                const results = await axios.get(Url(`fridge/group/${param.id}`));
+                setFridge(results.data);
+            } catch (error: any) {
+                toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi tải dữ liệu.");
+            }
+        };
+        fetchApiGroupFridge();
     };
 
     return (
@@ -424,7 +435,7 @@ function GroupDetail() {
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td>{item.quantity}</td>
+                                                <td>{item.quantityDouble}</td>
                                                 <td>{item.measure}</td>
                                                 <td>{formatDate(item.createAt)}</td>
                                                 <td>{formatDate(item.exprided)}</td>
@@ -459,6 +470,7 @@ function GroupDetail() {
                                     show={showModalRemoveFridgeGroup}
                                     hide={() => setShowModalRemoveFridgeGroup(false)}
                                     ingredient={currentIngredient}
+                                    onSuccess={handleSuccess} // Thêm callback này
                                 />
                             )}
                         </div>
