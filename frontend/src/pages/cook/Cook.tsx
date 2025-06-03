@@ -15,7 +15,6 @@ import { favoriteDish, unFavoriteDish, updateDishs } from './DishsSlice';
 import { Link } from 'react-router-dom';
 import { faHeart as noHeart } from '@fortawesome/free-regular-svg-icons';
 import { userInfo } from '../../utils/userInfo';
-import { formatDate } from '../../utils/dateHelpers';
 import './Cook.css';
 
 function Cook() {
@@ -25,6 +24,7 @@ function Cook() {
     const [showModalDeleteDish, setShowModalDeleteDish] = useState(false);
     const [showModalRestoreDish, setShowModalRestoreDish] = useState(false);
     const [showModalDetailDish, setShowModalDetailDish] = useState(false);
+    const [ingredientsList, setIngredientsList] = useState<Record<number, any>>({});
     const [indexCurrentDish, setIndexCurrentDish] = useState<number | null>(null);
     const [currentDish, setCurrentDish] = useState<dishsProps>({} as dishsProps);
     const [isLoading, setIsLoading] = useState(true);
@@ -90,6 +90,35 @@ function Cook() {
         setShowToast(true);
     };
 
+    // Hàm kiểm tra nguyên liệu cho tất cả món ăn
+    const checkAllDishesIngredients = async () => {
+        try {
+            const results = await Promise.all(
+                listDishs.map(dish =>
+                    axios.get(Url(`dishs/show/detail/${dish.id}/${userInfo?.id}`))
+                )
+            );
+
+            const ingredientsData = results.reduce((acc, response, index) => {
+                if (response.data) {
+                    acc[listDishs[index].id] = response.data;
+                }
+                return acc;
+            }, {} as Record<number, any>);
+
+            setIngredientsList(ingredientsData);
+        } catch (error) {
+            console.error('Lỗi khi lấy chi tiết nguyên liệu:', error);
+        }
+    };
+
+    // Tự động gọi khi component mount và khi listDishs thay đổi
+    useEffect(() => {
+        if (listDishs.length > 0) {
+            checkAllDishesIngredients();
+        }
+    }, [listDishs]);
+
     const renderLoading = () => (
         <div className="text-center py-5">
             <div className="spinner-border" role="status">
@@ -121,6 +150,39 @@ function Cook() {
             </Button>
         </div>
     );
+
+    const checkIngredientsStatus = (dishId : number) => {
+        const dishData = ingredientsList[dishId];
+        if (!dishData || !dishData.ingredients || dishData.ingredients.length === 0) {
+            return 'no-ingredients'; // Chưa có nguyên liệu
+        }
+
+        const checkQuantities = getCheckQuantities(dishId);
+        const allReady = checkQuantities.every((quantity: number) => quantity > 0);
+        return allReady ? 'ready' : 'not-ready'; // Sẵn sàng hoặc chưa sẵn sàng
+    };
+
+    const getCheckQuantities = (dishId: number) => {
+        const dishData = ingredientsList[dishId];
+        if (!dishData || !dishData.ingredients || dishData.ingredients.length === 0) {
+            return [];
+        }
+        
+        return dishData.ingredients.map((item: any) => item.checkQuantity);
+    };
+
+    const checkRecipeStatus = (dishId: number) => {
+        const dishData = ingredientsList[dishId];
+        if (!dishData) return 'missing-both';
+
+        const hasIngredients = dishData.ingredients && dishData.ingredients.length > 0;
+        const hasRecipe = dishData.recipeDes && dishData.recipeDes.trim() !== '';
+
+        if (hasIngredients && hasRecipe) return 'complete';
+        if (!hasIngredients && !hasRecipe) return 'missing-both';
+        if (!hasIngredients) return 'missing-ingredients';
+        return 'missing-recipe';
+    };
 
     return (
         <div className="store-container">
@@ -162,7 +224,7 @@ function Cook() {
                 ) : listDishs.length === 0 ? (
                     renderEmptyList()
                 ) : (
-                    <div className="table-responsive" style={{ maxHeight: 'calc(100vh - 250px)', fontSize: 'medium'  }}>
+                    <div className="table-responsive" style={{ maxHeight: 'calc(100vh - 250px)', fontSize: 'medium' }}>
                         <Table hover className="mb-0">
                             <thead className="table-dark sticky-top">
                                 <tr>
@@ -171,7 +233,7 @@ function Cook() {
                                     <th>Tên món ăn</th>
                                     <th className="text-center">Trạng thái</th>
                                     <th className="text-center">Kiểu món ăn</th>
-                                    <th className="text-center">Ngày tạo</th>
+                                    <th className="text-center">Công thức nấu ăn</th>
                                     <th className="text-center">Xóa/Khôi phục</th>
                                     <th className="text-center">Yêu thích</th>
                                 </tr>
@@ -202,18 +264,28 @@ function Cook() {
                                             {dish.name}
                                         </td>
                                         <td className="text-center">
-                                            {dish.status === 1 ? (
-                                                <Badge pill bg="success">
-                                                    Sẵn sàng đặt món
-                                                </Badge>
-                                            ) : (
-                                                <Badge pill bg="danger">
-                                                    Đã xóa
-                                                </Badge>
-                                            )}
+                                            {(() => {
+                                                const status = checkIngredientsStatus(dish.id);
+                                                if (status === 'no-ingredients') return null;
+                                                if (status === 'ready') {
+                                                    return <Badge pill bg="success">Sẵn sàng nấu</Badge>;
+                                                }
+                                                return <Badge pill bg="warning">Chưa sẵn sàng nấu</Badge>;
+                                            })()}
                                         </td>
                                         <td className="text-center">{dish.type}</td>
-                                        <td className="text-center">{formatDate(dish.createAt)}</td>
+                                        <td>
+                                            {(() => {
+                                                const status = checkRecipeStatus(dish.id);
+                                                switch (status) {
+                                                    case 'complete': return 'Đã có';
+                                                    case 'missing-ingredients': return 'Thiếu danh sách nguyên liệu';
+                                                    case 'missing-recipe': return 'Thiếu công thức nấu';
+                                                    case 'missing-both': return 'Thiếu cả công thức và nguyên liệu';
+                                                    default: return 'Chưa xác định';
+                                                }
+                                            })()}
+                                        </td>
                                         <td className="text-center">
                                             {dish.status === 1 ? (
                                                 <Button
