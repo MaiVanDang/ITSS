@@ -18,6 +18,13 @@ import { dishsProps, ingredientProps } from '../../utils/interface/Interface';
 import { updateDishs } from '../cook/DishsSlice';
 import moment from 'moment';
 
+// Interface để track nguyên liệu từ món ăn
+interface DishIngredientItem {
+    ingredientId: number;
+    baseQuantity: number;
+    measure: string;
+}
+
 function AddMarketOrder() {
     const today = new Date().toISOString().split('T')[0];
     const dispatch = useDispatch();
@@ -31,8 +38,23 @@ function AddMarketOrder() {
     const [name, setName] = useState('');
     const [showResultIngredient, setShowResultIngredient] = useState(false);
     const [ingredientsSelected, setIngredientsSelected] = useState<ingredientProps[]>([]);
-    const [measureIngredient, setMeasureIngredient] = useState(['']);
-    const [quantityIngredient, setQuantityIngredient] = useState(['']);
+    const [measureIngredient, setMeasureIngredient] = useState<string[]>([]);
+    const [quantityIngredient, setQuantityIngredient] = useState<string[]>([]);
+
+    // Tab dishes
+    const [nameDish, setNameDish] = useState('');
+    const [showResultDish, setShowResultDish] = useState(false);
+    const [dishSelected, setDishSelected] = useState<dishsProps[]>([]);
+    const [cookDate, setCookDate] = useState<string[]>([]);
+    const [expireDate, setExpireDate] = useState<string[]>([]);
+    const [quantityDish, setQuantityDish] = useState<string[]>([]);
+
+    // Thêm state để track nguyên liệu từ món ăn nào
+    const [dishIngredientMapping, setDishIngredientMapping] = useState<{[dishId: number]: DishIngredientItem[]}>({});
+    const [ingredientSources, setIngredientSources] = useState<{[ingredientId: number]: {
+        manual: number; // Số lượng thêm thủ công
+        fromDishes: {[dishId: number]: number}; // Số lượng từ từng món ăn
+    }}>({});
 
     const callApi2 = async (name: string) => {
         try {
@@ -59,27 +81,12 @@ function AddMarketOrder() {
         fetchData();
     }, [name]);
 
-    const handleClickItemIngredient = (item: ingredientProps) => {
-        if (!ingredientsSelected.includes(item)) setIngredientsSelected((prev) => [...prev, item]);
-    };
-
-    const handleDeleteIngredient = (id: number) => {
-        setIngredientsSelected(ingredientsSelected.filter((item) => item.id !== id));
-    };
-
-    // Tab dishes
-    const [nameDish, setNameDish] = useState('');
-    const [showResultDish, setShowResultDish] = useState(false);
-    const [dishSelected, setDishSelected] = useState<dishsProps[]>([]);
-    const [cookDate, setCookDate] = useState(['']);
-    const [expireDate, setExpireDate] = useState(['']);
-    const [quantityDish, setQuantityDish] = useState(['']);
-
     const callApiDish = async (name: string) => {
         try {
             const response = await axios.get(Url(`dishs/filter`), {
                 params: { name: name, status: 1, type: '', userId: userInfo?.id },
             });
+            console.log(response.data);
             return response.data;
         } catch (error) {
             alert('Không chọn được món ăn!!!');
@@ -100,17 +107,275 @@ function AddMarketOrder() {
         fetchData();
     }, [nameDish]);
 
-    const handleClickItemDish = (item: dishsProps) => {
-        if (!dishSelected.includes(item)) {
+    // Hàm tính tổng số lượng nguyên liệu từ tất cả nguồn
+    const calculateTotalQuantity = (ingredientId: number): number => {
+        const sources = ingredientSources[ingredientId];
+        if (!sources) return 0;
+
+        let total = sources.manual || 0;
+        Object.values(sources.fromDishes || {}).forEach(quantity => {
+            total += quantity;
+        });
+        return total;
+    };
+
+    // Hàm cập nhật số lượng nguyên liệu trong bảng
+    const updateIngredientQuantityInTable = (ingredientId: number) => {
+        const ingredientIndex = ingredientsSelected.findIndex(ing => ing.id === ingredientId);
+        if (ingredientIndex !== -1) {
+            const newQuantity = [...quantityIngredient];
+            newQuantity[ingredientIndex] = calculateTotalQuantity(ingredientId).toString();
+            setQuantityIngredient(newQuantity);
+        }
+    };
+
+    const handleClickItemIngredient = (item: ingredientProps) => {
+        if (!ingredientsSelected.some(ingredient => ingredient.id === item.id)) {
+            setIngredientsSelected((prev) => [...prev, item]);
+            setMeasureIngredient((prev) => [...prev, '']);
+            setQuantityIngredient((prev) => [...prev, '0']);
+            
+            // Khởi tạo tracking cho nguyên liệu mới
+            setIngredientSources(prev => ({
+                ...prev,
+                [item.id]: {
+                    manual: 0,
+                    fromDishes: {}
+                }
+            }));
+        }
+    };
+
+    const handleDeleteIngredient = (id: number) => {
+        const indexToDelete = ingredientsSelected.findIndex(item => item.id === id);
+        if (indexToDelete !== -1) {
+            // Xóa ingredient
+            const newIngredientsSelected = ingredientsSelected.filter((item) => item.id !== id);
+            setIngredientsSelected(newIngredientsSelected);
+            
+            // Xóa measure và quantity tương ứng
+            const newMeasure = [...measureIngredient];
+            const newQuantity = [...quantityIngredient];
+            newMeasure.splice(indexToDelete, 1);
+            newQuantity.splice(indexToDelete, 1);
+            setMeasureIngredient(newMeasure);
+            setQuantityIngredient(newQuantity);
+
+            // Xóa tracking
+            const newIngredientSources = { ...ingredientSources };
+            delete newIngredientSources[id];
+            setIngredientSources(newIngredientSources);
+        }
+    };
+
+    // Hàm thêm nguyên liệu từ món ăn
+    const addIngredientsFromDish = async (dishId: number, dishQuantity: number) => {
+        try {
+            const response = await axios.get(Url(`dishs/show/detail/${dishId}/${userInfo?.id}`));
+            if (!response.data || !response.data.ingredients) return;
+
+            const dishIngredients = response.data.ingredients;
+            const dishIngredientItems: DishIngredientItem[] = [];
+
+            // Cập nhật mapping cho món ăn này
+            dishIngredients.forEach((item: any) => {
+                const ingredient = item.ingredient;
+                const baseQuantity = parseFloat(item.quantity?.toString() || '0');
+                const measure = item.measure || '';
+
+                dishIngredientItems.push({
+                    ingredientId: ingredient.id,
+                    baseQuantity,
+                    measure
+                });
+
+                // Kiểm tra xem nguyên liệu đã có trong danh sách chưa
+                const existingIndex = ingredientsSelected.findIndex(selected => selected.id === ingredient.id);
+                
+                if (existingIndex === -1) {
+                    // Thêm nguyên liệu mới
+                    setIngredientsSelected(prev => [...prev, ingredient]);
+                    setMeasureIngredient(prev => [...prev, measure]);
+                    setQuantityIngredient(prev => [...prev, (baseQuantity * dishQuantity).toString()]);
+                    
+                    // Khởi tạo tracking
+                    setIngredientSources(prev => ({
+                        ...prev,
+                        [ingredient.id]: {
+                            manual: 0,
+                            fromDishes: { [dishId]: baseQuantity * dishQuantity }
+                        }
+                    }));
+                } else {
+                    // Cập nhật nguyên liệu đã có
+                    setIngredientSources(prev => ({
+                        ...prev,
+                        [ingredient.id]: {
+                            ...prev[ingredient.id],
+                            fromDishes: {
+                                ...prev[ingredient.id]?.fromDishes,
+                                [dishId]: baseQuantity * dishQuantity
+                            }
+                        }
+                    }));
+                    
+                    // Cập nhật số lượng trong bảng
+                    setTimeout(() => updateIngredientQuantityInTable(ingredient.id), 0);
+                }
+            });
+
+            // Lưu mapping cho món ăn
+            setDishIngredientMapping(prev => ({
+                ...prev,
+                [dishId]: dishIngredientItems
+            }));
+
+        } catch (error) {
+            console.error('Lỗi khi lấy chi tiết món ăn:', error);
+        }
+    };
+
+    const handleClickItemDish = async (item: dishsProps) => {
+        if (!dishSelected.some(dish => dish.id === item.id)) {
             setDishSelected((prev) => [...prev, item]);
+            setCookDate((prev) => [...prev, '']);
+            setExpireDate((prev) => [...prev, '']);
+            setQuantityDish((prev) => [...prev, '1']);
+            
+            // Thêm nguyên liệu từ món ăn
+            await addIngredientsFromDish(item.id, 1);
         }
     };
 
     const handleDeleteDish = (id: number) => {
-        setDishSelected(dishSelected.filter((item) => item.id !== id));
+        const indexToDelete = dishSelected.findIndex(item => item.id === id);
+        if (indexToDelete !== -1) {
+            // Xóa dish
+            const newDishSelected = dishSelected.filter((item) => item.id !== id);
+            setDishSelected(newDishSelected);
+            
+            // Xóa các thông tin tương ứng
+            const newCookDate = [...cookDate];
+            const newExpireDate = [...expireDate];
+            const newQuantityDish = [...quantityDish];
+            newCookDate.splice(indexToDelete, 1);
+            newExpireDate.splice(indexToDelete, 1);
+            newQuantityDish.splice(indexToDelete, 1);
+            setCookDate(newCookDate);
+            setExpireDate(newExpireDate);
+            setQuantityDish(newQuantityDish);
+
+            // Xóa nguyên liệu từ món ăn này
+            const dishIngredientItems = dishIngredientMapping[id] || [];
+            const updatedIngredientSources = { ...ingredientSources };
+            const ingredientsToRemove: number[] = [];
+
+            dishIngredientItems.forEach(item => {
+                if (updatedIngredientSources[item.ingredientId]) {
+                    // Xóa contribution từ món ăn này
+                    delete updatedIngredientSources[item.ingredientId].fromDishes[id];
+                    
+                    // Kiểm tra xem nguyên liệu này còn được sử dụng không
+                    const hasManual = updatedIngredientSources[item.ingredientId].manual > 0;
+                    const hasOtherDishes = Object.keys(updatedIngredientSources[item.ingredientId].fromDishes).length > 0;
+                    
+                    if (!hasManual && !hasOtherDishes) {
+                        ingredientsToRemove.push(item.ingredientId);
+                    }
+                }
+            });
+
+            // Xóa nguyên liệu không còn sử dụng
+            let newIngredientsSelected = [...ingredientsSelected];
+            let newMeasureIngredient = [...measureIngredient];
+            let newQuantityIngredient = [...quantityIngredient];
+
+            ingredientsToRemove.forEach(ingredientId => {
+                const index = newIngredientsSelected.findIndex(ing => ing.id === ingredientId);
+                if (index !== -1) {
+                    newIngredientsSelected.splice(index, 1);
+                    newMeasureIngredient.splice(index, 1);
+                    newQuantityIngredient.splice(index, 1);
+                    delete updatedIngredientSources[ingredientId];
+                }
+            });
+
+            setIngredientsSelected(newIngredientsSelected);
+            setMeasureIngredient(newMeasureIngredient);
+            setQuantityIngredient(newQuantityIngredient);
+            setIngredientSources(updatedIngredientSources);
+
+            // Cập nhật số lượng cho nguyên liệu còn lại
+            dishIngredientItems.forEach(item => {
+                if (!ingredientsToRemove.includes(item.ingredientId)) {
+                    updateIngredientQuantityInTable(item.ingredientId);
+                }
+            });
+
+            // Xóa mapping
+            const newDishIngredientMapping = { ...dishIngredientMapping };
+            delete newDishIngredientMapping[id];
+            setDishIngredientMapping(newDishIngredientMapping);
+        }
     };
 
-    const [listMeasure, setListMeasure] = useState<any>([]);
+    // Hàm xử lý thay đổi số lượng món ăn
+    const handleDishQuantityChange = (dishId: number, newQuantity: number, dishIndex: number) => {
+        // Cập nhật số lượng món ăn
+        const updatedQuantityDish = [...quantityDish];
+        updatedQuantityDish[dishIndex] = newQuantity.toString();
+        setQuantityDish(updatedQuantityDish);
+
+        // Cập nhật số lượng nguyên liệu từ món ăn này
+        const dishIngredientItems = dishIngredientMapping[dishId] || [];
+        const updatedIngredientSources = { ...ingredientSources };
+
+        dishIngredientItems.forEach(item => {
+            if (!updatedIngredientSources[item.ingredientId]) {
+                updatedIngredientSources[item.ingredientId] = {
+                    manual: 0,
+                    fromDishes: {}
+                };
+            }
+            updatedIngredientSources[item.ingredientId].fromDishes[dishId] = item.baseQuantity * newQuantity;
+        });
+
+        // Cập nhật state ingredientSources
+        setIngredientSources(updatedIngredientSources);
+
+        // Cập nhật số lượng trong bảng nguyên liệu
+        const updatedQuantityIngredient = [...quantityIngredient];
+        ingredientsSelected.forEach((ingredient, index) => {
+            const total = calculateTotalQuantity(ingredient.id);
+            updatedQuantityIngredient[index] = total.toString();
+        });
+        setQuantityIngredient(updatedQuantityIngredient);
+    };
+
+    // Hàm xử lý thay đổi số lượng nguyên liệu thủ công
+    const handleManualIngredientQuantityChange = (ingredientId: number, value: string, index: number) => {
+        const newValue = parseFloat(value) || 0;
+        const currentTotal = calculateTotalQuantity(ingredientId);
+        const currentManual = ingredientSources[ingredientId]?.manual || 0;
+        const fromDishesTotal = currentTotal - currentManual;
+        
+        const newManual = Math.max(0, newValue - fromDishesTotal);
+
+        setIngredientSources(prev => ({
+            ...prev,
+            [ingredientId]: {
+                ...prev[ingredientId],
+                manual: newManual
+            }
+        }));
+
+        // Cập nhật ngay giá trị hiển thị
+        const updatedQuantityIngredient = [...quantityIngredient];
+        updatedQuantityIngredient[index] = value;
+        setQuantityIngredient(updatedQuantityIngredient);
+    };
+
+    const [listMeasure, setListMeasure] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchMeasure = async () => {
@@ -154,8 +419,9 @@ function AddMarketOrder() {
         // Gọi api tạo đơn đi chợ
         try {
             await axios.post(Url('market'), dataSubmit);
+            alert('Tạo đơn đi chợ thành công!');
         } catch (error: any) {
-            alert(error.response.data.message);
+            alert(error.response?.data?.message || 'Có lỗi xảy ra khi tạo đơn');
         }
 
         setTimeout(() => {
@@ -262,7 +528,7 @@ function AddMarketOrder() {
                         </thead>
                         <tbody>
                             {ingredientsSelected.map((ingredient, index) => (
-                                <tr key={index}>
+                                <tr key={ingredient.id}>
                                     <td style={{ width: '5%' }}>{index + 1}</td>
                                     <td>
                                         <img
@@ -273,18 +539,15 @@ function AddMarketOrder() {
                                     </td>
                                     <td>{ingredient.name}</td>
                                     <td style={{ width: '15%' }}>
-                                        <Form.Group controlId={`measure ${index}`}>
+                                        <Form.Group controlId={`measure-${ingredient.id}`}>
                                             <Form.Control
                                                 type="text"
                                                 list="listMeasure"
-                                                value={measureIngredient[index]}
+                                                value={measureIngredient[index] || ''}
                                                 onChange={(e) => {
-                                                    const updatedmeasureIngredient = [
-                                                        ...measureIngredient,
-                                                    ];
-                                                    updatedmeasureIngredient[index] =
-                                                        e.target.value;
-                                                    setMeasureIngredient(updatedmeasureIngredient);
+                                                    const updatedMeasureIngredient = [...measureIngredient];
+                                                    updatedMeasureIngredient[index] = e.target.value;
+                                                    setMeasureIngredient(updatedMeasureIngredient);
                                                 }}
                                             />
                                         </Form.Group>
@@ -294,25 +557,15 @@ function AddMarketOrder() {
                                                     {measure}
                                                 </option>
                                             ))}
-                                            {/* <option value="quả">quả</option>
-                                            <option value="quả">quả</option>
-                                            <option value="quả">quả</option> */}
                                         </datalist>
                                     </td>
                                     <td style={{ width: '15%' }}>
-                                        <Form.Group controlId={`quantity ${index}`}>
+                                        <Form.Group controlId={`quantity-${ingredient.id}`}>
                                             <Form.Control
                                                 type="number"
-                                                value={quantityIngredient[index]}
+                                                value={quantityIngredient[index] || ''}
                                                 onChange={(e) => {
-                                                    const updatedQuantityIngredient = [
-                                                        ...quantityIngredient,
-                                                    ];
-                                                    updatedQuantityIngredient[index] =
-                                                        e.target.value;
-                                                    setQuantityIngredient(
-                                                        updatedQuantityIngredient,
-                                                    );
+                                                    handleManualIngredientQuantityChange(ingredient.id, e.target.value, index);
                                                 }}
                                             />
                                         </Form.Group>
@@ -406,7 +659,7 @@ function AddMarketOrder() {
                         </thead>
                         <tbody>
                             {dishSelected.map((dish, index) => (
-                                <tr key={index}>
+                                <tr key={dish.id}>
                                     <td style={{ width: '5%' }}>{index + 1}</td>
                                     <td>
                                         <img
@@ -417,11 +670,11 @@ function AddMarketOrder() {
                                     </td>
                                     <td>{dish.name}</td>
                                     <td style={{ width: '15%' }}>
-                                        <Form.Group controlId={`cook ${index}`}>
+                                        <Form.Group controlId={`cook-${dish.id}`}>
                                             <Form.Control
                                                 type="date"
                                                 min={today}
-                                                value={cookDate[index]}
+                                                value={cookDate[index] || ''}
                                                 onChange={(e) => {
                                                     const updatedCookDate = [...cookDate];
                                                     updatedCookDate[index] = e.target.value;
@@ -431,11 +684,11 @@ function AddMarketOrder() {
                                         </Form.Group>
                                     </td>
                                     <td style={{ width: '15%' }}>
-                                        <Form.Group controlId={`expire ${index}`}>
+                                        <Form.Group controlId={`expire-${dish.id}`}>
                                             <Form.Control
                                                 type="date"
                                                 min={today}
-                                                value={expireDate[index]}
+                                                value={expireDate[index] || ''}
                                                 onChange={(e) => {
                                                     const updatedExpireDate = [...expireDate];
                                                     updatedExpireDate[index] = e.target.value;
@@ -445,15 +698,14 @@ function AddMarketOrder() {
                                         </Form.Group>
                                     </td>
                                     <td style={{ width: '15%' }}>
-                                        <Form.Group controlId={`quantityDish ${index}`}>
+                                        <Form.Group controlId={`quantityDish-${dish.id}`}>
                                             <Form.Control
                                                 type="number"
                                                 min={1}
-                                                value={quantityDish[index]}
+                                                value={quantityDish[index] || ''}
                                                 onChange={(e) => {
-                                                    const updatedQuantityDish = [...quantityDish];
-                                                    updatedQuantityDish[index] = e.target.value;
-                                                    setQuantityDish(updatedQuantityDish);
+                                                    const newQuantity = parseInt(e.target.value) || 1;
+                                                    handleDishQuantityChange(dish.id, newQuantity, index);
                                                 }}
                                             />
                                         </Form.Group>

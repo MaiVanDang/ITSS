@@ -180,7 +180,7 @@ function Ingredients() {
                                             <img
                                                 src={ingredient.image}
                                                 alt="anh"
-                                                style={{ height: '3rem', width: '3rem', objectFit: 'cover' }}
+                                                style={{ height: '3rem', width: '4rem', objectFit: 'cover' }}
                                                 className="rounded"
                                             />
                                         </td>
