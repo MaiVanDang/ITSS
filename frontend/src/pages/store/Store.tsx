@@ -221,7 +221,8 @@ function Store() {
 
         try {
             const requestData = {
-                fridgeId: userInfo?.fridgeId ?? '',
+                id: item.storeId,
+                userId: userInfo?.id ?? '',
                 ingredientsId: item.ingredientsId,
                 quantity: item.quantity,
                 measure: item.measure,
@@ -231,7 +232,7 @@ function Store() {
                 ingredientImage: item.ingredientImage,
                 ingredientStatus: item.ingredientStatus,
             };
-
+            console.log(requestData);
             await axios.post(Url(`fridge/store/ingredients`), requestData);
 
             showToastMessage(TOAST_TYPES.SUCCESS, `Đã thêm ${item.ingredientName} vào tủ lạnh!`);

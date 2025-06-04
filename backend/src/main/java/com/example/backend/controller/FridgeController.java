@@ -54,10 +54,9 @@ public class FridgeController {
     @PostMapping("/fridge/store/ingredients")
     public String addNewIngredientFromStore(@RequestBody Map<String, Object> request) {
 
-        System.out.println("Received request: " + request);
-
         // Extract and validate each field individually
-        Object fridgeIdObj = request.get("fridgeId");
+        Object storeIdObj = request.get("id");
+        Object userIdObj = request.get("userId");
         Object ingredientsIdObj = request.get("ingredientsId");
         Object ingredientNameObj = request.get("ingredientName");
         Object ingredientImageObj = request.get("ingredientImage");
@@ -67,7 +66,8 @@ public class FridgeController {
         Object expridedObj = request.get("exprided");
         Object buyAtObject = request.get("buyAt");
 
-        Integer fridgeId = (fridgeIdObj instanceof Number) ? ((Number) fridgeIdObj).intValue() : null;
+        Integer storeId = (storeIdObj instanceof Number) ? ((Number) storeIdObj).intValue() : null;
+        Integer userId = (userIdObj instanceof Number) ? ((Number) userIdObj).intValue() : null;
         Integer ingredientId = (ingredientsIdObj instanceof Number) ? ((Number) ingredientsIdObj).intValue() : null;
         String ingredientName = (ingredientNameObj instanceof String) ? (String) ingredientNameObj : null;
         String ingredientImage = (ingredientImageObj instanceof String) ? (String) ingredientImageObj : null;
@@ -79,6 +79,7 @@ public class FridgeController {
         LocalDate buyAt = (buyAtObject instanceof String) ? LocalDate.parse((String) buyAtObject) : null;
 
         StoreDto storeDto = new StoreDto();
+        storeDto.setStoreId(storeId);
         storeDto.setIngredientsId(ingredientId);
         storeDto.setIngredientName(ingredientName);
         storeDto.setIngredientImage(ingredientImage);
@@ -88,7 +89,7 @@ public class FridgeController {
         storeDto.setExpridedAt(expridedWhenShopping);
         storeDto.setBuyAt(buyAt);
 
-        fridgeService.addIngredientsFromStore(storeDto, fridgeId);
+        fridgeService.addIngredientsFromStore(storeDto, userId);
         return "success";
     }
 
