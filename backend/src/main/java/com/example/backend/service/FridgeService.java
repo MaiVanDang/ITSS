@@ -195,14 +195,15 @@ public class FridgeService {
                 .findByExpridedAndFridgeIdAndIngredientsId(newExpridedAt, fridgeId, ingredientId);
         if (oldFridgeIngredientsEntity != null) {
             // Nếu nguyên liệu đã tồn tại trong tủ lạnh, cộng dồn số lượng
-            oldFridgeIngredientsEntity.setQuantity(oldFridgeIngredientsEntity.getQuantity() + quantity);
+            oldFridgeIngredientsEntity.setQuantity(
+                    oldFridgeIngredientsEntity.getQuantity() + convertMeasureToQuantity(measure, (double) quantity));
             fridgeIngredientsRepository.save(oldFridgeIngredientsEntity);
         } else {
             // Nếu nguyên liệu chưa tồn tại, tạo mới
             FridgeIngredientsEntity newFridgeIngredient = new FridgeIngredientsEntity();
             newFridgeIngredient.setIngredientsId(ingredientId);
             newFridgeIngredient.setFridgeId(fridgeId);
-            newFridgeIngredient.setQuantity(quantity);
+            newFridgeIngredient.setQuantity(convertMeasureToQuantity(measure, (double) quantity));
             newFridgeIngredient.setMeasure(measure);
             newFridgeIngredient.setExprided(newExpridedAt);
             newFridgeIngredient.setCreateAt(now());
@@ -213,7 +214,8 @@ public class FridgeService {
                 ingredientId,
                 exprided);
         if (storeEntity != null) {
-            storeEntity.setQuantity(storeEntity.getQuantity().subtract(BigDecimal.valueOf(quantity)));
+            storeEntity.setQuantity(storeEntity.getQuantity()
+                    .subtract(BigDecimal.valueOf(convertMeasureToQuantity(measure, (double) quantity))));
             if (storeEntity.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
                 storeRepository.delete(storeEntity);
             } else {

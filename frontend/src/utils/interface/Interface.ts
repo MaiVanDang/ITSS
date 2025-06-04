@@ -68,6 +68,7 @@ export interface attributesProps {
     quantity: number;
     ingredientStatus: string;
     statusstore: true | false;
+    checkQuantity: number;
 }
 
 export interface dishesProps {

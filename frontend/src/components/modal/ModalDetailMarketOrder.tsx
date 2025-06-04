@@ -72,12 +72,21 @@ function ModalDetailMarketOrder({
         quantity: number,
         buyAt?: string,
         exprided?: string,
+        checkQuantity?: number,
     ) => {
         if (status === 0) {
-            const isConfirmed = window.confirm(
-                'Bạn có chắc chắn mua nguyên liệu này không! Nếu đã mua rồi thì không thể xóa đi mua lại!'
-            );
-            
+            let confirmationMessage = 'Bạn có chắc chắn mua nguyên liệu này không! Nếu đã mua rồi thì không thể xóa đi mua lại!';
+            console.log(checkQuantity);
+            if (checkQuantity === 1) {
+                confirmationMessage = 'Nguyên liệu hiện tại vẫn còn đủ trong kho. Bạn có chắc muốn mua thêm?';
+            } else if (checkQuantity === 2) {
+                confirmationMessage = 'Nguyên liệu hiện tại vẫn còn đủ trong tủ lạnh. Bạn có chắc muốn mua thêm?';
+            } else if (checkQuantity === 3) {
+                confirmationMessage = 'Nguyên liệu hiện tại vẫn còn đủ trong kho và tủ lạnh. Bạn có chắc muốn mua thêm?';
+            }
+
+            const isConfirmed = window.confirm(confirmationMessage);
+
             if (!isConfirmed) {
                 return;
             }
@@ -88,10 +97,10 @@ function ModalDetailMarketOrder({
                     attributeId: ingredientId,
                     measure,
                     quantity,
-                    buyAt: new Date().toLocaleDateString('sv-SE'), // Ngày mua là ngày hiện tại
+                    buyAt: buyAt || new Date().toLocaleDateString('sv-SE'), // Sử dụng buyAt nếu có, không thì dùng ngày hiện tại
                     exprided,
                 });
-                
+
                 setReload(Math.random());
                 showToastMessage(ToastType.SUCCESS, 'Đã đánh dấu mua thành công');
             } catch (error) {
@@ -99,9 +108,7 @@ function ModalDetailMarketOrder({
                 showToastMessage(ToastType.ERROR, 'Có lỗi xảy ra khi cập nhật trạng thái mua');
             }
         } else if (status === 1) {
-            const isConfirmed = window.confirm(
-                'Nguyên liệu này đã được mua.'
-            );
+            window.alert('Nguyên liệu này đã được mua.');
         }
     };
 
@@ -126,31 +133,31 @@ function ModalDetailMarketOrder({
     // Kiểm tra nguyên liệu đã hết hạn chưa
     const isExpired = (expirationDate: string) => {
         if (!expirationDate) return false;
-        
+
         const today = new Date();
         const expDate = new Date(expirationDate);
-        
+
         // Reset time to compare only dates
         today.setHours(0, 0, 0, 0);
         expDate.setHours(0, 0, 0, 0);
-        
+
         return expDate < today;
     };
 
     // Kiểm tra nguyên liệu sắp hết hạn (trong vòng 2 ngày)
     const isExpiringSoon = (expirationDate: string) => {
         if (!expirationDate) return false;
-        
+
         const today = new Date();
         const expDate = new Date(expirationDate);
         const threeDaysFromNow = new Date();
         threeDaysFromNow.setDate(today.getDate() + 2);
-        
+
         // Reset time to compare only dates
         today.setHours(0, 0, 0, 0);
         expDate.setHours(0, 0, 0, 0);
         threeDaysFromNow.setHours(0, 0, 0, 0);
-        
+
         return expDate >= today && expDate <= threeDaysFromNow;
     };
 
@@ -178,40 +185,40 @@ function ModalDetailMarketOrder({
 
     // Thêm vào tủ lạnh - đã cập nhật với kiểm tra statusstore
     const handleAddToFridge = async (
-        ingredientId: number, 
-        quantity: number, 
-        measure: string, 
-        exprided: string, 
-        ingredient: any, 
+        ingredientId: number,
+        quantity: number,
+        measure: string,
+        exprided: string,
+        ingredient: any,
         ingredientStatus: string,
         shoppingAttributeId: number,
         statusstore: boolean
     ) => {
-        
+
         // Kiểm tra xem nguyên liệu đã được thêm vào tủ lạnh chưa
         if (statusstore === false) {
             showToastMessage(ToastType.WARNING, `${ingredient.name} đã được thêm vào tủ lạnh rồi!`);
             return;
         }
-        
+
         // Kiểm tra nguyên liệu đã hết hạn chưa
         if (isExpired(exprided)) {
             showToastMessage(
-                ToastType.ERROR, 
+                ToastType.ERROR,
                 `${ingredient.name} đã hết hạn sử dụng (${exprided}). Bạn cần mua lại nguyên liệu mới trước khi thêm vào tủ lạnh để đảm bảo an toàn thực phẩm.`
             );
-            
+
             // Reset trạng thái mua về chưa mua để buộc người dùng mua lại
             await resetBuyStatus(ingredientId, measure);
             return;
         }
-        
+
         // Kiểm tra xem có phải gia vị nêm không
         if (ingredientStatus === 'SEASONING') {
             showToastMessage(ToastType.INFO, 'Không nhất thiết phải thêm gia vị nêm vào tủ lạnh.');
             return;
         }
-        
+
         // Kiểm tra xem có phải gạo không
         if (isSpiceOrRice(ingredient)) {
             showToastMessage(ToastType.INFO, `${ingredient.name} không nhất thiết phải thêm vào tủ lạnh.`);
@@ -221,12 +228,12 @@ function ModalDetailMarketOrder({
         // Kiểm tra nguyên liệu sắp hết hạn
         if (isExpiringSoon(exprided)) {
             showToastMessage(
-                ToastType.WARNING, 
+                ToastType.WARNING,
                 `${ingredient.name} sắp hết hạn (${exprided}). Vui lòng sử dụng sớm hoặc cân nhắc mua lại.`
             );
             // Vẫn cho phép thêm vào tủ lạnh nhưng có cảnh báo
         }
-        
+
         try {
             await axios.post(Url(`fridge/ingredients`), {
                 fridgeId: fridgeId ? fridgeId : userInfo?.fridgeId,
@@ -238,7 +245,7 @@ function ModalDetailMarketOrder({
                 ingredient,
                 shoppingAttributeId: shoppingAttributeId,
             });
-            
+
             if (!isExpiringSoon(exprided)) {
                 showToastMessage(ToastType.SUCCESS, 'Thêm vào tủ lạnh thành công');
             }
@@ -405,22 +412,22 @@ function ModalDetailMarketOrder({
                                                 <td>{attribute.quantity}</td>
                                                 <td>{attribute.measure}</td>
                                                 <td>{attribute.ingredientStatus === 'INGREDIENT' ? (
-                                                        <Badge pill bg="primary">
-                                                            Nguyên liệu
-                                                        </Badge>
-                                                    ) : attribute.ingredientStatus === 'FRESH_INGREDIENT' ? (
-                                                        <Badge pill bg="success">
-                                                            Nguyên liệu tươi
-                                                        </Badge>
-                                                    ) : attribute.ingredientStatus === 'DRY_INGREDIENT' ? (
-                                                        <Badge pill bg="secondary">
-                                                            Nguyên liệu khô
-                                                        </Badge>
-                                                    ) : attribute.ingredientStatus === 'SEASONING' ? (
-                                                        <Badge pill bg="warning">
-                                                            Gia vị nêm
-                                                        </Badge>
-                                                    ) : null}</td>
+                                                    <Badge pill bg="primary">
+                                                        Nguyên liệu
+                                                    </Badge>
+                                                ) : attribute.ingredientStatus === 'FRESH_INGREDIENT' ? (
+                                                    <Badge pill bg="success">
+                                                        Nguyên liệu tươi
+                                                    </Badge>
+                                                ) : attribute.ingredientStatus === 'DRY_INGREDIENT' ? (
+                                                    <Badge pill bg="secondary">
+                                                        Nguyên liệu khô
+                                                    </Badge>
+                                                ) : attribute.ingredientStatus === 'SEASONING' ? (
+                                                    <Badge pill bg="warning">
+                                                        Gia vị nêm
+                                                    </Badge>
+                                                ) : null}</td>
                                                 <td>{attribute.buyAt}</td>
                                                 <td>
                                                     {attribute.exprided}
@@ -443,6 +450,7 @@ function ModalDetailMarketOrder({
                                                                 attribute.quantity,
                                                                 attribute.buyAt,
                                                                 attribute.exprided,
+                                                                attribute.checkQuantity,
                                                             )
 
                                                         }
@@ -465,8 +473,8 @@ function ModalDetailMarketOrder({
                                                             }
                                                             style={{ cursor: 'pointer' }}
                                                             className={
-                                                                isExpired(attribute.exprided) ? 'text-danger' : 
-                                                                attribute.statusstore === true ? 'text-success' : ''
+                                                                isExpired(attribute.exprided) ? 'text-danger' :
+                                                                    attribute.statusstore === true ? 'text-success' : ''
                                                             }
                                                         >
                                                             <FontAwesomeIcon

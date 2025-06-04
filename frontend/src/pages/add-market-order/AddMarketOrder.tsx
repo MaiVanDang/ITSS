@@ -475,6 +475,8 @@ function AddMarketOrder() {
             <hr />
 
             <Tabs defaultActiveKey="home" id="justify-tab-example" className="mb-3">
+
+                {/* Tab nguyên liệu */}
                 <Tab eventKey="home" title="Nguyên liệu">
                     <InputGroup className="position-relative" size="lg" style={{ width: '40%' }}>
                         <InputGroup.Text id="basic-addon1">

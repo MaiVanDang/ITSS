@@ -36,6 +36,8 @@ public class ShoppingService {
     private final UserRepository userRepository;
     private final DishRepository dishRepository;
     private final GroupMemberRepository groupMemberRepository;
+    private final FridgeRepository fridgeRepository;
+    private final FridgeIngredientsRepository fridgeIngredientsRepository;
 
     public List<ShoppingDto> getAllShoppings() {
         List<ShoppingDto> dtos = new ArrayList<ShoppingDto>();
@@ -69,6 +71,9 @@ public class ShoppingService {
 
             attributeDto.setUser(userDto);
             attributeDto.setIngredients(ingredientsDto);
+
+            attributeDto.setCheckQuantity(checkQuantityIngredient(user.getId(),
+                    attribute.getIngredientsId(), attribute.getQuantity().doubleValue(), attribute.getMeasure()));
             attributeDtos.add(attributeDto);
 
         }
@@ -249,14 +254,16 @@ public class ShoppingService {
                     exprided);
             if (oldStore != null) {
                 // Nếu đã có trong bảng store, cập nhật số lượng
-                oldStore.setQuantity(oldStore.getQuantity().add(BigDecimal.valueOf(quantity)));
+                oldStore.setQuantity(oldStore.getQuantity()
+                        .add(BigDecimal.valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity)))));
                 storeRepository.save(oldStore);
             } else {
                 // Nếu chưa có trong bảng store, tạo mới
                 StoreEntity storeEntity = new StoreEntity(); // Đổi từ StoreDto sang StoreEntity
                 storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
                 storeEntity.setUserId(shopping.getUserId()); // Lấy userId từ shopping
-                storeEntity.setQuantity(BigDecimal.valueOf(quantity));
+                storeEntity
+                        .setQuantity(BigDecimal.valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity))));
                 storeEntity.setBuyAt(buyAt);
                 storeEntity.setExpridedAt(exprided);
                 storeEntity.setMeasure(measure);
@@ -488,6 +495,64 @@ public class ShoppingService {
         }
         // Trả về số lượng tương ứng với đơn vị đo lường đã chuyển đổi
         return quantity; // Placeholder, cần implement logic chuyển đổi thực tế
+    }
+
+    private boolean isExpridedAt(LocalDate expiredAt) {
+        // Kiểm tra xem ngày hết hạn đã qua chưa
+        return expiredAt.isBefore(now());
+    }
+
+    public int checkQuantityIngredient(Integer userId, Integer ingredientId, Double quantityDouble, String measure) {
+        int chekck = 0;
+        boolean isStore = false;
+        boolean isFridge = false;
+        int quantityInt = 0;
+        // Kiểm tra trong nhà kho theo cá nhân
+        List<StoreEntity> storeEntity = storeRepository.findByUserIdAndIngredientId(userId, ingredientId);
+        if (storeEntity != null && !storeEntity.isEmpty()) {
+            for (StoreEntity store : storeEntity) {
+                // Chuyển đổi đơn vị đo lường nếu cần
+                quantityInt = convertMeasureToQuantity(measure, quantityDouble);
+                if (store.getQuantity().intValue() >= quantityInt && !isExpridedAt(store.getExpridedAt())) {
+                    // Nếu số lượng trong kho đủ và chưa hết hạn
+                    isStore = true; // Tồn tại đủ số lượng trong kho
+                    break;
+                }
+            }
+        }
+
+        List<FridgeEntity> fridgeEntity = fridgeRepository.findByUserId(userId);
+        int newFridgeId = 0;
+        for (FridgeEntity fridge : fridgeEntity) {
+            if (fridge.getGroupId() == null || fridge.getGroupId() == 0) {
+                newFridgeId = fridge.getId();
+                break;
+            }
+        }
+        List<FridgeIngredientsEntity> fridgeIngredients = fridgeIngredientsRepository
+                .findByFridgeIdAndIngredientsId(newFridgeId, ingredientId);
+        if (fridgeIngredients != null && !fridgeIngredients.isEmpty()) {
+            for (FridgeIngredientsEntity fridgeIngredient : fridgeIngredients) {
+                // Chuyển đổi đơn vị đo lường nếu cần
+                quantityInt = convertMeasureToQuantity(measure, quantityDouble);
+                if (fridgeIngredient.getQuantity() >= quantityInt && !isExpridedAt(fridgeIngredient.getExprided())) {
+                    // Nếu số lượng trong tủ lạnh đủ và chưa hết hạn
+                    isFridge = true; // Tồn tại đủ số lượng trong tủ lạnh
+                    break;
+                }
+            }
+        }
+        // Nếu tồn tại ở cả 2 nơi theo cá nhân
+        if (isStore && isFridge) {
+            chekck = 3; // Tồn tại đủ số lượng trong cả kho và tủ lạnh
+        } else if (isFridge) {
+            chekck = 2; // Tồn tại đủ số lượng trong tủ lạnh
+        } else if (isStore) {
+            chekck = 1; // Tồn tại đủ số lượng trong tủ kho
+        } else {
+            chekck = 0; // Không tồn tại đủ số lượng trong cả kho và tủ lạnh
+        }
+        return chekck;
     }
 
 }
