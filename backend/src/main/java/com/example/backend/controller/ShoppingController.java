@@ -75,8 +75,18 @@ public class ShoppingController {
         String measure = (String) request.get("measure");
         Integer quantity = (Integer) request.get("quantity");
         String buyAtStr = (String) request.get("buyAt");
+        Integer leaderId = (Integer) request.get("leaderId");
+        List<?> rawListMember = (List<?>) request.get("listMember");
+        List<Integer> listMember = rawListMember != null
+                ? rawListMember.stream()
+                        .map(item -> item instanceof Integer ? (Integer) item : Integer.parseInt(item.toString()))
+                        .toList()
+                : null;
+        Integer userBuyId = (Integer) request.get("userId");
+
         LocalDate buyAt = LocalDate.parse(buyAtStr);
-        shoppingService.updateShoppingAttribute(id, attributeId, measure, quantity, buyAt);
+        shoppingService.updateShoppingAttribute(id, attributeId, measure, quantity, buyAt, leaderId, listMember,
+                userBuyId);
         return ResponseEntity.ok("success");
     }
 

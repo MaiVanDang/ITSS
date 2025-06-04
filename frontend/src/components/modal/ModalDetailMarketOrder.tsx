@@ -4,6 +4,7 @@ import Url from '../../utils/url';
 import { useEffect, useState } from 'react';
 import { shoppingProps, userInfoProps } from '../../utils/interface/Interface';
 import { userInfo } from '../../utils/userInfo';
+import { UserInfo } from 'os';
 
 interface ModalDetailMarketOrderProps {
     show: boolean;
@@ -40,7 +41,6 @@ function ModalDetailMarketOrder({
 
     const callApi = async () => {
         if (indexOrder === 0) return null;
-        console.log(indexOrder);
         try {
             const response = await axios.get(Url(`market/show/detail/${indexOrder}`));
             return response.data;
@@ -63,6 +63,7 @@ function ModalDetailMarketOrder({
     }, [show, reload, indexOrder]);
 
     const handleChangeAttributeStatus = async (
+        userId: number,
         status: 1 | 0 | null,
         ingredientId: number,
         measure: string,
@@ -73,7 +74,6 @@ function ModalDetailMarketOrder({
     ) => {
         if (status === 0) {
             let confirmationMessage = 'Bạn có chắc chắn mua nguyên liệu này không! Nếu đã mua rồi thì không thể xóa đi mua lại!';
-            console.log(checkQuantity);
             if (checkQuantity === 1) {
                 confirmationMessage = 'Nguyên liệu hiện tại vẫn còn đủ trong kho. Bạn có chắc muốn mua thêm?';
             } else if (checkQuantity === 2) {
@@ -89,13 +89,27 @@ function ModalDetailMarketOrder({
             }
 
             try {
+                // Xác định người mua
+                let buyerId = userId;
+
+                // Nếu đơn thuộc nhóm và người dùng hiện tại là trưởng nhóm
+                if (leaderId && listMember && leaderId === userInfo?.id) {
+                    // Giữ nguyên buyerId là userId từ props (đã được chọn trong select)
+                } else {
+                    // Nếu không thuộc nhóm hoặc không phải trưởng nhóm, sử dụng ID của người dùng hiện tại
+                    buyerId = userInfo?.id || userId;
+                }
+
                 await axios.put(Url(`market/active`), {
                     id: indexOrder,
                     attributeId: ingredientId,
                     measure,
                     quantity,
-                    buyAt: buyAt || new Date().toLocaleDateString('sv-SE'), // Sử dụng buyAt nếu có, không thì dùng ngày hiện tại
+                    buyAt: buyAt || new Date().toLocaleDateString('sv-SE'),
                     exprided,
+                    leaderId: leaderId, // Thêm trưởng nhóm (nếu có)
+                    listMember: listMember?.map(member => member.id), // Thêm danh sách thành viên (nếu có)
+                    userId: buyerId, // Sử dụng buyerId đã xác định
                 });
 
                 setReload(Math.random());
@@ -262,7 +276,7 @@ function ModalDetailMarketOrder({
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
                                                 <td>
-                                                    {leaderId === userInfo?.id ? (
+                                                    {leaderId && listMember && leaderId === userInfo?.id ? (
                                                         <Form.Select
                                                             onChange={(e) =>
                                                                 handleChangeUserBuy(
@@ -270,6 +284,7 @@ function ModalDetailMarketOrder({
                                                                     e.target.value,
                                                                 )
                                                             }
+                                                            value={attribute.user.id}
                                                         >
                                                             <option value={attribute.user.name}>
                                                                 {attribute.user.name}
@@ -348,6 +363,7 @@ function ModalDetailMarketOrder({
                                                         checked={attribute.status === 1}
                                                         onChange={() =>
                                                             handleChangeAttributeStatus(
+                                                                attribute.user.id,
                                                                 attribute.status,
                                                                 attribute.ingredients.id,
                                                                 attribute.measure,
@@ -355,6 +371,7 @@ function ModalDetailMarketOrder({
                                                                 attribute.buyAt,
                                                                 attribute.exprided,
                                                                 attribute.checkQuantity,
+
                                                             )
 
                                                         }

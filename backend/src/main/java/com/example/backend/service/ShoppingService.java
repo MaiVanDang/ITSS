@@ -17,7 +17,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.time.LocalDate.now;
 
@@ -38,6 +41,7 @@ public class ShoppingService {
     private final GroupMemberRepository groupMemberRepository;
     private final FridgeRepository fridgeRepository;
     private final FridgeIngredientsRepository fridgeIngredientsRepository;
+    private final GroupRepository groupRepository;
 
     public List<ShoppingDto> getAllShoppings() {
         List<ShoppingDto> dtos = new ArrayList<ShoppingDto>();
@@ -274,7 +278,7 @@ public class ShoppingService {
     }
 
     public void updateShoppingAttribute(Integer id, Integer attributeId, String measure, Integer quantity,
-            LocalDate buyAt) {
+            LocalDate buyAt, Integer leaderId, List<Integer> listMember, Integer userBuyId) {
 
         if (attributeRepository.findById(id) == null) {
             throw new NotFoundException("Không tìm thấy đơn đi chợ với mã đơn : " + id);
@@ -286,26 +290,116 @@ public class ShoppingService {
             IngredientsEntity ingredientEntity = ingredientsRepository.findById(attributeEntity.getIngredientsId())
                     .get();
             LocalDate exprided = buyAt.plusDays(ingredientEntity.getDueDate());
-            StoreEntity oldStore = storeRepository.findByIngredientsIdAndBuyAtAndExpridedAt(
+            List<StoreEntity> oldStores = storeRepository.findByIngredientsIdAndBuyAtAndExpridedAt(
                     attributeEntity.getIngredientsId(),
                     buyAt,
                     exprided);
-            if (oldStore != null) {
-                // Nếu đã có trong bảng store, cập nhật số lượng
-                oldStore.setQuantity(oldStore.getQuantity()
-                        .add(BigDecimal.valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity)))));
-                storeRepository.save(oldStore);
-            } else {
-                // Nếu chưa có trong bảng store, tạo mới
-                StoreEntity storeEntity = new StoreEntity(); // Đổi từ StoreDto sang StoreEntity
-                storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
-                storeEntity.setUserId(shopping.getUserId()); // Lấy userId từ shopping
-                storeEntity
-                        .setQuantity(BigDecimal.valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity))));
-                storeEntity.setBuyAt(buyAt);
-                storeEntity.setExpridedAt(exprided);
-                storeEntity.setMeasure(measure);
-                storeRepository.save(storeEntity);
+
+            // Nếu cá nhân mua hàng
+
+            if (leaderId == null && listMember == null) {
+
+                StoreEntity entity = null;
+                if (oldStores != null) {
+                    for (StoreEntity oldStore : oldStores) {
+                        if (oldStore.getGroupId() == null) {
+                            entity = oldStore;
+                            break;
+                        }
+                    }
+
+                    if (entity != null) {
+                        // Nếu đã có trong bảng store, cập nhật số lượng
+                        entity.setQuantity(entity.getQuantity()
+                                .add(BigDecimal.valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity)))));
+                        storeRepository.save(entity);
+                    } else {
+                        // Nếu chưa có trong bảng store, tạo mới
+                        StoreEntity storeEntity = new StoreEntity(); // Đổi từ StoreDto sang StoreEntity
+                        storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
+                        storeEntity.setUserId(shopping.getUserId()); // Lấy userId từ shopping
+                        storeEntity
+                                .setQuantity(
+                                        BigDecimal
+                                                .valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity))));
+                        storeEntity.setBuyAt(buyAt);
+                        storeEntity.setExpridedAt(exprided);
+                        storeEntity.setMeasure(measure);
+                        storeRepository.save(storeEntity);
+                    }
+                } else {
+                    // Nếu chưa có trong bảng store, tạo mới
+                    StoreEntity storeEntity = new StoreEntity(); // Đổi từ StoreDto sang StoreEntity
+                    storeEntity.setIngredientsId(attributeEntity.getIngredientsId());
+                    storeEntity.setUserId(shopping.getUserId()); // Lấy userId từ shopping
+                    storeEntity
+                            .setQuantity(
+                                    BigDecimal.valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity))));
+                    storeEntity.setBuyAt(buyAt);
+                    storeEntity.setExpridedAt(exprided);
+                    storeEntity.setMeasure(measure);
+                    storeRepository.save(storeEntity);
+                }
+
+            }
+
+            // Nếu mua hàng trong nhóm
+            if (leaderId != null || listMember != null) {
+
+                StoreEntity oldStore = null;
+                // Kiểm tra tính hợp lệ của nhóm và lấy GroupId
+                Integer validGroupId = checkMemberGroup(leaderId, listMember);
+
+                if (validGroupId == null) {
+                    throw new IllegalArgumentException(
+                            "Danh sách thành viên không khớp với bất kỳ nhóm nào của leader này");
+                }
+                // Danh sách tìm được là khác null --> cộng dồn
+                if (oldStores != null) {
+                    // Tìm kiếm xem trong danh sách cũ đó có nhóm cần tìm không
+                    for (StoreEntity entity : oldStores) {
+                        if (entity.getGroupId() == validGroupId) {
+                            oldStore = entity;
+                            break;
+                        }
+                    }
+
+                    // Nếu có nhóm cần tìm và cùng người mua--> cộng dồn
+                    if (oldStore != null && oldStore.getUserId() == userBuyId) {
+
+                        oldStore.setQuantity(oldStore.getQuantity()
+                                .add(BigDecimal.valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity)))));
+                        storeRepository.save(oldStore);
+                    } else {
+                        StoreEntity newStoreEntity = new StoreEntity(); // Đổi từ StoreDto sang StoreEntity
+                        newStoreEntity.setIngredientsId(attributeEntity.getIngredientsId());
+                        newStoreEntity.setUserId(userBuyId); // Lấy userId từ shopping
+                        newStoreEntity
+                                .setQuantity(
+                                        BigDecimal
+                                                .valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity))));
+                        newStoreEntity.setBuyAt(buyAt);
+                        newStoreEntity.setExpridedAt(exprided);
+                        newStoreEntity.setMeasure(measure);
+                        newStoreEntity.setGroupId(validGroupId);
+                        storeRepository.save(newStoreEntity);
+                    }
+
+                } else {// Danh sách tìm được là null hoặc không có nhóm cần tìm trong danh sách -->
+                        // thêm mới
+                    StoreEntity newStoreEntity = new StoreEntity(); // Đổi từ StoreDto sang StoreEntity
+                    newStoreEntity.setIngredientsId(attributeEntity.getIngredientsId());
+                    newStoreEntity.setUserId(userBuyId); // Lấy userId từ shopping
+                    newStoreEntity
+                            .setQuantity(
+                                    BigDecimal.valueOf(convertMeasureToQuantity(measure, Double.valueOf(quantity))));
+                    newStoreEntity.setBuyAt(buyAt);
+                    newStoreEntity.setExpridedAt(exprided);
+                    newStoreEntity.setMeasure(measure);
+                    newStoreEntity.setGroupId(validGroupId);
+                    storeRepository.save(newStoreEntity);
+                }
+
             }
 
             attributeEntity.setBuyAt(now());
@@ -430,30 +524,69 @@ public class ShoppingService {
         List<StoreEntity> storeEntities = storeRepository.findByUserId(userId);
         List<StoreDto> storeDtos = new ArrayList<>();
 
+        // Cá nhân mua
         for (StoreEntity storeEntity : storeEntities) {
-            StoreDto storeDto = new StoreDto();
+            if (storeEntity.getGroupId() == null) {
+                StoreDto storeDto = new StoreDto();
 
-            storeDto.setStoreId(storeEntity.getId());
-            storeDto.setUserId(storeEntity.getUserId());
-            storeDto.setQuantity(storeEntity.getQuantity());
-            storeDto.setQuantityDouble(convertMeasureToQuantityResponse(storeEntity.getMeasure(),
-                    storeEntity.getQuantity().intValue()));
-            storeDto.setExpridedAt(storeEntity.getExpridedAt());
-            storeDto.setBuyAt(storeEntity.getBuyAt());
-            storeDto.setMeasure(storeEntity.getMeasure());
-            storeDto.setIngredientsId(storeEntity.getIngredientsId());
+                storeDto.setStoreId(storeEntity.getId());
+                storeDto.setUserId(storeEntity.getUserId());
+                storeDto.setQuantity(storeEntity.getQuantity());
+                storeDto.setQuantityDouble(convertMeasureToQuantityResponse(storeEntity.getMeasure(),
+                        storeEntity.getQuantity().intValue()));
+                storeDto.setExpridedAt(storeEntity.getExpridedAt());
+                storeDto.setBuyAt(storeEntity.getBuyAt());
+                storeDto.setMeasure(storeEntity.getMeasure());
+                storeDto.setIngredientsId(storeEntity.getIngredientsId());
 
-            IngredientsEntity ingredientsEntity = ingredientsRepository.findById(storeEntity.getIngredient().getId())
-                    .orElseThrow(() -> new RuntimeException("Ingredient not found"));
-            storeDto.setIngredientName(ingredientsEntity.getName());
-            storeDto.setIngredientStatus(ingredientsEntity.getIngredientStatus());
-            storeDto.setIngredientImage(ingredientsEntity.getImage());
+                IngredientsEntity ingredientsEntity = ingredientsRepository
+                        .findById(storeEntity.getIngredient().getId())
+                        .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+                storeDto.setIngredientName(ingredientsEntity.getName());
+                storeDto.setIngredientStatus(ingredientsEntity.getIngredientStatus());
+                storeDto.setIngredientImage(ingredientsEntity.getImage());
 
-            UserEntity userEntity = userRepository.findById(storeEntity.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            storeDto.setUserName(userEntity.getName());
+                UserEntity userEntity = userRepository.findById(storeEntity.getUserId())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
+                storeDto.setUserName(userEntity.getName());
 
-            storeDtos.add(storeDto);
+                storeDtos.add(storeDto);
+            }
+
+        }
+
+        // Nhóm có nó mua
+        List<GroupMemberEntity> groupMemberEntites = groupMemberRepository.findByUserId(userId);
+        if (groupMemberEntites != null) {
+            for (GroupMemberEntity groupMemberEntity : groupMemberEntites) {
+                List<StoreEntity> entities = storeRepository.findByGroupId(groupMemberEntity.getGroupId());
+                for (StoreEntity entity : entities) {
+                    StoreDto storeDto = new StoreDto();
+
+                    storeDto.setStoreId(entity.getId());
+                    storeDto.setUserId(entity.getUserId());
+                    storeDto.setQuantity(entity.getQuantity());
+                    storeDto.setQuantityDouble(convertMeasureToQuantityResponse(entity.getMeasure(),
+                            entity.getQuantity().intValue()));
+                    storeDto.setExpridedAt(entity.getExpridedAt());
+                    storeDto.setBuyAt(entity.getBuyAt());
+                    storeDto.setMeasure(entity.getMeasure());
+                    storeDto.setIngredientsId(entity.getIngredientsId());
+
+                    IngredientsEntity ingredientsEntity = ingredientsRepository
+                            .findById(entity.getIngredient().getId())
+                            .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+                    storeDto.setIngredientName(ingredientsEntity.getName());
+                    storeDto.setIngredientStatus(ingredientsEntity.getIngredientStatus());
+                    storeDto.setIngredientImage(ingredientsEntity.getImage());
+
+                    UserEntity userEntity = userRepository.findById(entity.getUserId())
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+                    storeDto.setUserName(userEntity.getName());
+
+                    storeDtos.add(storeDto);
+                }
+            }
         }
         return storeDtos;
     }
@@ -591,6 +724,94 @@ public class ShoppingService {
             chekck = 0; // Không tồn tại đủ số lượng trong cả kho và tủ lạnh
         }
         return chekck;
+    }
+
+    /**
+     * Kiểm tra xem danh sách thành viên có hợp lệ với nhóm của leader không
+     * 
+     * @param leaderId   ID của leader
+     * @param listMember Danh sách ID thành viên cần kiểm tra (đã bao gồm cả
+     *                   leaderId)
+     * @return Integer - GroupId nếu tìm thấy nhóm hợp lệ, null nếu không tìm thấy
+     */
+    public Integer checkMemberGroup(Integer leaderId, List<Integer> listMember) {
+        if (leaderId == null) {
+            return null;
+        }
+
+        // Tìm nhóm theo leader
+        List<GroupEntity> groupEntities = groupRepository.findByLeader(leaderId);
+
+        for (GroupEntity groupEntity : groupEntities) {
+            // Lấy danh sách thành viên của nhóm
+            List<GroupMemberEntity> groupMemberEntities = groupMemberRepository.findByGroupId(groupEntity.getId());
+
+            // Chuyển đổi danh sách thành viên trong nhóm thành Set<Integer> để dễ so sánh
+            Set<Integer> groupMemberIds = groupMemberEntities.stream()
+                    .map(GroupMemberEntity::getUserId) // Giả sử có method getUserId()
+                    .collect(Collectors.toSet());
+
+            // Thêm leader vào danh sách thành viên (nếu leader không tự động là member)
+            groupMemberIds.add(leaderId);
+
+            // Kiểm tra xem tất cả thành viên trong listMember có thuộc nhóm này không
+            if (listMember != null && !listMember.isEmpty()) {
+                Set<Integer> inputMemberIds = new HashSet<>(listMember);
+
+                // Kiểm tra xem tất cả thành viên đầu vào có nằm trong nhóm không
+                if (groupMemberIds.containsAll(inputMemberIds)) {
+                    return groupEntity.getId(); // Trả về GroupId
+                }
+            } else {
+                // Nếu listMember null hoặc rỗng, chỉ cần kiểm tra leader
+                return groupEntity.getId(); // Trả về GroupId đầu tiên
+            }
+        }
+
+        return null; // Không tìm thấy nhóm hợp lệ nào
+    }
+
+    /**
+     * Lấy nhóm hợp lệ dựa trên leaderId và danh sách thành viên
+     * 
+     * @param leaderId   ID của leader
+     * @param listMember Danh sách ID thành viên
+     * @return GroupEntity hợp lệ hoặc null nếu không tìm thấy
+     */
+    private GroupEntity getValidGroup(Integer leaderId, List<Integer> listMember) {
+        if (leaderId == null) {
+            return null;
+        }
+
+        // Tìm nhóm theo leader
+        List<GroupEntity> groupEntities = groupRepository.findByLeader(leaderId);
+
+        for (GroupEntity groupEntity : groupEntities) {
+            // Lấy danh sách thành viên của nhóm
+            List<GroupMemberEntity> groupMemberEntities = groupMemberRepository.findByGroupId(groupEntity.getId());
+
+            // Chuyển đổi danh sách thành viên trong nhóm thành Set<Integer> để dễ so sánh
+            Set<Integer> groupMemberIds = groupMemberEntities.stream()
+                    .map(GroupMemberEntity::getUserId)
+                    .collect(Collectors.toSet());
+
+            // Thêm leader vào danh sách thành viên
+            groupMemberIds.add(leaderId);
+
+            // Kiểm tra xem tất cả thành viên trong listMember có thuộc nhóm này không
+            if (listMember != null && !listMember.isEmpty()) {
+                Set<Integer> inputMemberIds = new HashSet<>(listMember);
+
+                if (groupMemberIds.containsAll(inputMemberIds)) {
+                    return groupEntity; // Trả về nhóm hợp lệ
+                }
+            } else {
+                // Nếu listMember null hoặc rỗng, trả về nhóm đầu tiên
+                return groupEntity;
+            }
+        }
+
+        return null; // Không tìm thấy nhóm hợp lệ
     }
 
 }

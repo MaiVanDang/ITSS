@@ -50,7 +50,7 @@ export interface userInfoProps {
     email: string;
     username: string;
     gender: 'nam' | 'nữ' | '';
-    groups: null;
+    groups: groupsProps;
     id: number;
     name: string;
     status: 1 | 0;

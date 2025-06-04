@@ -32,6 +32,9 @@ public class StoreEntity {
     @Column(length = 10)
     private String measure;
 
+    @Column(name = "groupid")
+    private Integer groupId;
+
     // Relationships (optional)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ingredients_id", insertable = false, updatable = false)
@@ -45,4 +48,5 @@ public class StoreEntity {
     public Integer getUserId() {
         return user != null ? user.getId() : null;
     }
+
 }

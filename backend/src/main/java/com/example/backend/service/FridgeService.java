@@ -165,13 +165,16 @@ public class FridgeService {
             fridgeIngredientsRepository.save(newFridgeIngredient);
         }
         // Cập nhật số lượng trong kho
-        StoreEntity storeEntity = storeRepository.findByIngredientsIdAndBuyAtAndExpridedAt(
+        List<StoreEntity> storeEntities = storeRepository.findByIngredientsIdAndBuyAtAndExpridedAt(
                 storeDto.getIngredientsId(),
                 storeDto.getBuyAt(),
                 storeDto.getExpridedAt());
 
-        storeRepository.delete(storeEntity);
-
+        for (StoreEntity storeEntity : storeEntities) {
+            if (storeEntity.getGroupId() == null) {
+                storeRepository.delete(storeEntity);
+            }
+        }
     }
 
     public void addIngredientToFridge(Map<String, Object> request) {

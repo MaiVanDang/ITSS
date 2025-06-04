@@ -13,7 +13,7 @@ public interface StoreRepository extends JpaRepository<StoreEntity, Integer> {
 
         List<StoreEntity> findByIngredientsId(Long ingredientsId);
 
-        StoreEntity findByIngredientsIdAndBuyAtAndExpridedAt(
+        List<StoreEntity> findByIngredientsIdAndBuyAtAndExpridedAt(
                         Integer ingredientsId,
                         LocalDate buyAt,
                         LocalDate expiredAt);
@@ -25,5 +25,7 @@ public interface StoreRepository extends JpaRepository<StoreEntity, Integer> {
         List<StoreEntity> findByUserIdAndIngredientId(
                         Integer userId,
                         Integer ingredientId);
+
+        List<StoreEntity> findByGroupId(Integer groupId);
 
 }
