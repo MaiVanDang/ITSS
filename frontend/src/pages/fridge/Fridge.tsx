@@ -1,12 +1,12 @@
-import { 
-  faRightFromBracket, 
-  faSnowflake,
-  faChartPie,
-  faClock,
-  faExclamationTriangle,
-  faCheck,
-  faFilter,
-  faRefresh
+import {
+    faRightFromBracket,
+    faSnowflake,
+    faChartPie,
+    faClock,
+    faExclamationTriangle,
+    faCheck,
+    faFilter,
+    faRefresh
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useState } from 'react';
@@ -23,8 +23,8 @@ import { ExpiryStatusBadge } from '../../components/shared/ExpiryStatusBadge';
 import { toast } from 'react-toastify';
 
 type FilterType = {
-  expiryStatus?: 'expired' | 'aboutToExpire' | 'fresh';
-  ingredientType?: 'dry' | 'seasoning' | 'fresh' | 'other';
+    expiryStatus?: 'expired' | 'aboutToExpire' | 'fresh';
+    ingredientType?: 'dry' | 'seasoning' | 'fresh' | 'other';
 };
 
 function Fridge() {
@@ -32,7 +32,7 @@ function Fridge() {
     const [fridge, setFridge] = useState<fridgeProps>({} as fridgeProps);
     const [showModalRemoveFridgeGroup, setShowModalRemoveFridgeGroup] = useState(false);
     const [currentIngredient, setCurrentIngredient] = useState<ingredientsProps>({} as ingredientsProps);
-    
+
     // Thêm state mới cho filter
     const [activeFilter, setActiveFilter] = useState<FilterType>({});
     const [filteredIngredients, setFilteredIngredients] = useState<ingredientsProps[]>([]);
@@ -59,9 +59,9 @@ function Fridge() {
     // Hàm áp dụng bộ lọc
     const applyFilters = () => {
         if (!fridge.ingredients) return;
-        
+
         let result = [...fridge.ingredients];
-        
+
         if (activeFilter.expiryStatus) {
             result = result.filter(item => {
                 const { status } = getExpiryStatus(item.exprided);
@@ -73,7 +73,7 @@ function Fridge() {
                 }
             });
         }
-        
+
         if (activeFilter.ingredientType) {
             result = result.filter(item => {
                 switch (activeFilter.ingredientType) {
@@ -85,7 +85,7 @@ function Fridge() {
                 }
             });
         }
-        
+
         setFilteredIngredients(result);
     };
 
@@ -174,8 +174,8 @@ function Fridge() {
 
     const stats = calculateStatistics();
     const hasExpiredItems = stats.expiryStatus.expired > 0;
-    const displayItems = filteredIngredients.length > 0 || Object.keys(activeFilter).length > 0 
-        ? filteredIngredients 
+    const displayItems = filteredIngredients.length > 0 || Object.keys(activeFilter).length > 0
+        ? filteredIngredients
         : fridge.ingredients || [];
 
     return (
@@ -188,8 +188,8 @@ function Fridge() {
                 </h2>
                 <div className="d-flex gap-2">
                     {Object.keys(activeFilter).length > 0 && (
-                        <Button 
-                            variant="outline-light" 
+                        <Button
+                            variant="outline-light"
                             size="sm"
                             onClick={clearAllFilters}
                             className="action-btn"
@@ -198,8 +198,8 @@ function Fridge() {
                             Xóa bộ lọc
                         </Button>
                     )}
-                    <Button 
-                        variant="outline-light" 
+                    <Button
+                        variant="outline-light"
                         onClick={() => window.location.reload()}
                         className="action-btn"
                     >
@@ -232,21 +232,21 @@ function Fridge() {
                                     <h5 className="text-center mb-3 text-gradient">Theo trạng thái hạn sử dụng</h5>
                                     <div className="stats-grid expiry-stats">
                                         {[
-                                            { 
-                                                type: 'expired', 
-                                                icon: faExclamationTriangle, 
+                                            {
+                                                type: 'expired',
+                                                icon: faExclamationTriangle,
                                                 label: 'Hết hạn',
                                                 className: 'expired'
                                             },
-                                            { 
-                                                type: 'aboutToExpire', 
-                                                icon: faClock, 
+                                            {
+                                                type: 'aboutToExpire',
+                                                icon: faClock,
                                                 label: 'Sắp hết hạn',
                                                 className: 'aboutToExpire'
                                             },
-                                            { 
-                                                type: 'fresh', 
-                                                icon: faCheck, 
+                                            {
+                                                type: 'fresh',
+                                                icon: faCheck,
                                                 label: 'Còn hạn',
                                                 className: 'fresh'
                                             }
@@ -256,8 +256,8 @@ function Fridge() {
                                                 className={`stat-item ${item.className} ${activeFilter.expiryStatus === item.type ? 'active' : ''}`}
                                                 onClick={() => handleFilterClick({ expiryStatus: item.type as any })}
                                             >
-                                                <FontAwesomeIcon 
-                                                    icon={activeFilter.expiryStatus === item.type ? faFilter : item.icon} 
+                                                <FontAwesomeIcon
+                                                    icon={activeFilter.expiryStatus === item.type ? faFilter : item.icon}
                                                     className="stat-icon"
                                                 />
                                                 <div className="stat-label">{item.label}</div>
@@ -284,7 +284,7 @@ function Fridge() {
                                                 className={`stat-item ${activeFilter.ingredientType === item.type ? 'active' : ''}`}
                                                 onClick={() => handleFilterClick({ ingredientType: item.type as any })}
                                             >
-                                                <Badge 
+                                                <Badge
                                                     bg={activeFilter.ingredientType === item.type ? 'primary' : item.color}
                                                     className="stat-icon"
                                                     style={{ fontSize: '0.75rem' }}
@@ -316,7 +316,7 @@ function Fridge() {
                             <strong>
                                 <FontAwesomeIcon icon={faFilter} className="me-2" />
                                 Đang lọc:
-                            </strong> 
+                            </strong>
                             {activeFilter.expiryStatus === 'expired' && ' Thực phẩm đã hết hạn'}
                             {activeFilter.expiryStatus === 'aboutToExpire' && ' Thực phẩm sắp hết hạn'}
                             {activeFilter.expiryStatus === 'fresh' && ' Thực phẩm còn hạn'}
@@ -335,12 +335,12 @@ function Fridge() {
                         <div className="empty-state">
                             <FontAwesomeIcon icon={faSnowflake} className="empty-icon" />
                             <h5>
-                                {(!fridge.ingredients || fridge.ingredients.length === 0) 
-                                    ? 'Tủ lạnh hiện chưa có thực phẩm nào' 
+                                {(!fridge.ingredients || fridge.ingredients.length === 0)
+                                    ? 'Tủ lạnh hiện chưa có thực phẩm nào'
                                     : 'Không tìm thấy thực phẩm phù hợp với bộ lọc'}
                             </h5>
                             <p>
-                                {(!fridge.ingredients || fridge.ingredients.length === 0) 
+                                {(!fridge.ingredients || fridge.ingredients.length === 0)
                                     ? 'Hãy thêm nguyên liệu từ kho lưu trữ để bắt đầu!'
                                     : 'Vui lòng thử lại với bộ lọc khác'}
                             </p>
@@ -357,20 +357,50 @@ function Fridge() {
                                 <Table hover className="mb-0">
                                     <thead>
                                         <tr>
-                                            <th style={{ width: '60px' }}>STT</th>
-                                            <th style={{ width: '80px' }}>Ảnh</th>
-                                            <th>Tên nguyên liệu</th>
-                                            <th style={{ width: '100px' }}>Số lượng</th>
+                                            <th>STT</th>
+                                            <th>Ảnh</th>
+                                            <th>Tên thực phẩm</th>
+                                            <th>Số lượng</th>
                                             <th style={{ width: '100px' }}>Đơn vị</th>
-                                            <th style={{ width: '130px' }}>Ngày thêm</th>
-                                            <th style={{ width: '130px' }}>Ngày hết hạn</th>
-                                            <th style={{ width: '120px' }}>Trạng thái</th>
-                                            <th style={{ width: '100px' }}>Sử dụng</th>
+                                            <th>Loại</th>
+                                            <th>Người mua</th>
+                                            <th>Ngày thêm</th>
+                                            <th>Ngày hết hạn</th>
+                                            <th>Trạng thái</th>
+                                            <th>Sử dụng</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {displayItems.map((item, index) => {
                                             const { status, style, tooltipText } = getExpiryStatus(item.exprided);
+
+                                            // Chuyển đổi ingredientStatus thành tên loại thực phẩm
+                                            const getIngredientType = (status: string) => {
+                                                switch (status) {
+                                                    case 'INGREDIENT':
+                                                        return <Badge pill bg="primary">Nguyên liệu</Badge>;
+                                                    case 'FRESH_INGREDIENT':
+                                                        return <Badge pill bg="success">Nguyên liệu tươi</Badge>;
+                                                    case 'DRY_INGREDIENT':
+                                                        return <Badge pill bg="secondary">Nguyên liệu khô</Badge>;
+                                                    case 'SEASONING':
+                                                        return <Badge pill bg="warning">Gia vị nêm</Badge>;
+                                                    default:
+                                                        return <Badge pill bg="light">Không xác định</Badge>;
+                                                }
+                                            };
+
+                                            // Giả định người mua (nếu có thông tin từ fridge.group hoặc fridge.user)
+                                            const getBuyerName = () => {
+                                                if (fridge.group?.groupMembers?.length > 0) {
+                                                    // Nếu là tủ lạnh nhóm, có thể hiển thị tên nhóm
+                                                    return fridge.group.name;
+                                                } else if (fridge.user) {
+                                                    // Nếu là tủ lạnh cá nhân
+                                                    return fridge.user.name;
+                                                }
+                                                return 'Không xác định';
+                                            };
 
                                             return (
                                                 <tr
@@ -396,6 +426,8 @@ function Fridge() {
                                                     </td>
                                                     <td className="text-center fw-medium">{item.quantityDouble}</td>
                                                     <td className="text-center">{item.measure}</td>
+                                                    <td className="text-center">{getIngredientType(item.ingredient.ingredientStatus)}</td>
+                                                    <td className="text-center"><Badge bg="info">{getBuyerName()}</Badge></td>
                                                     <td className="text-center">{formatDate(item.createAt)}</td>
                                                     <td className="text-center">{formatDate(item.exprided)}</td>
                                                     <td className="text-center">
@@ -416,16 +448,16 @@ function Fridge() {
                                                                 setShowModalRemoveFridgeGroup(true);
                                                             }}
                                                         >
-                                                        <FontAwesomeIcon icon={faRightFromBracket} />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </Table>
+                                                            <FontAwesomeIcon icon={faRightFromBracket} />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </Table>
+                            </div>
                         </div>
-                    </div>
                     )}
                 </Card.Body>
             </Card>

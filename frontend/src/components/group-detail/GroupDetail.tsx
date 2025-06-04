@@ -36,7 +36,7 @@ function GroupDetail() {
     const navigate = useNavigate();
 
     const [showModalDetailMarketOrder, setShowModalDetailMarketOrder] = useState(false);
-    const [currentIdMarketOrder, setCurrentIdMarketOrder] = useState(1);
+    const [currentIdMarketOrder, setCurrentIdMarketOrder] = useState(0);
     const [showModalDeleteMember, setShowModalDeleteMember] = useState(false);
     const [showModalAddMember, setShowModalAddMember] = useState(false);
     const [currentMember, setCurrentMember] = useState<userInfoProps>({} as userInfoProps);

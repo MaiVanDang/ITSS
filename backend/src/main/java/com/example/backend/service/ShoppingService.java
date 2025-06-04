@@ -47,45 +47,83 @@ public class ShoppingService {
     }
 
     public ShoppingDto getDetailShoppingById(Integer orderId) {
-        ShoppingDto shoppingDto = new ShoppingDto();
-        ShoppingEntity entity = shoppingRepository.findById(orderId).get();
-        UserEntity userShopping = userRepository.findById(entity.getUserId()).get();
+        // Get shopping entity with proper error handling
+        ShoppingEntity entity = shoppingRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Shopping record with ID " + orderId + " not found"));
+
+        // Get user entity with proper error handling
+        UserEntity userShopping = userRepository.findById(entity.getUserId())
+                .orElseThrow(() -> new NotFoundException("User with ID " + entity.getUserId() + " not found"));
+
+        // Map entities to DTOs
         UserDto userShoppingDto = shoppingModelMapper.map(userShopping, UserDto.class);
-        shoppingDto = shoppingModelMapper.map(entity, ShoppingDto.class);
+        ShoppingDto shoppingDto = shoppingModelMapper.map(entity, ShoppingDto.class);
         shoppingDto.setUser(userShoppingDto);
-        List<ShoppingAttributeDto> attributeDtos = new ArrayList<ShoppingAttributeDto>();
+
+        // Process shopping attributes
+        List<ShoppingAttributeDto> attributeDtos = new ArrayList<>();
         List<ShoppingAttributeEntity> attributes = attributeRepository.findByShoppingId(entity.getId());
+
         for (ShoppingAttributeEntity attribute : attributes) {
-            ShoppingAttributeDto attributeDto = new ShoppingAttributeDto();
-            attributeDto = shoppingModelMapper.map(attribute, ShoppingAttributeDto.class);
-            String status = ingredientsRepository.findById(attributeDto.getIngredients().getId()).get()
-                    .getIngredientStatus();
-            attributeDto.setIngredientStatus(status);
-            UserDto userDto = new UserDto();
-            UserEntity user = userRepository.findById(attribute.getUserId()).get();
-            if (user != null) {
-                userDto = shoppingModelMapper.map(user, UserDto.class);
+            try {
+                ShoppingAttributeDto attributeDto = shoppingModelMapper.map(attribute, ShoppingAttributeDto.class);
+
+                // Get ingredient status with error handling
+                String status = ingredientsRepository.findById(attributeDto.getIngredients().getId())
+                        .map(ingredient -> ingredient.getIngredientStatus())
+                        .orElse("UNKNOWN"); // Default status if ingredient not found
+                attributeDto.setIngredientStatus(status);
+
+                // Get user with error handling
+                UserEntity user = userRepository.findById(attribute.getUserId())
+                        .orElseThrow(() -> new NotFoundException(
+                                "User with ID " + attribute.getUserId() + " not found"));
+                UserDto userDto = shoppingModelMapper.map(user, UserDto.class);
+
+                // Get ingredients with error handling
+                IngredientsEntity ingredientsEntity = ingredientsRepository.findById(attribute.getIngredientsId())
+                        .orElseThrow(() -> new NotFoundException(
+                                "Ingredient with ID " + attribute.getIngredientsId() + " not found"));
+                IngredientsDto ingredientsDto = shoppingModelMapper.map(ingredientsEntity, IngredientsDto.class);
+
+                attributeDto.setUser(userDto);
+                attributeDto.setIngredients(ingredientsDto);
+
+                attributeDto.setCheckQuantity(checkQuantityIngredient(user.getId(),
+                        attribute.getIngredientsId(), attribute.getQuantity().doubleValue(), attribute.getMeasure()));
+
+                attributeDtos.add(attributeDto);
+            } catch (Exception e) {
+                // Log the error but continue processing other attributes
+                System.err.println("Error processing attribute ID " + attribute.getId() + ": " + e.getMessage());
+                // Optionally skip this attribute or add a default one
             }
-            IngredientsEntity ingredientsEntity = ingredientsRepository.findById(attribute.getIngredientsId()).get();
-            IngredientsDto ingredientsDto = shoppingModelMapper.map(ingredientsEntity, IngredientsDto.class);
-
-            attributeDto.setUser(userDto);
-            attributeDto.setIngredients(ingredientsDto);
-
-            attributeDto.setCheckQuantity(checkQuantityIngredient(user.getId(),
-                    attribute.getIngredientsId(), attribute.getQuantity().doubleValue(), attribute.getMeasure()));
-            attributeDtos.add(attributeDto);
-
         }
-        List<DishAttributeDto> dishAttributeDtos = new ArrayList<DishAttributeDto>();
+
+        // Process dish attributes
+        List<DishAttributeDto> dishAttributeDtos = new ArrayList<>();
         List<DishAttributeEntity> dishAttributes = dishAttributeRepository.findByShoppingId(orderId);
+
         for (DishAttributeEntity dishAttribute : dishAttributes) {
-            DishAttributeDto dishAttributeDto = shoppingModelMapper.map(dishAttribute, DishAttributeDto.class);
-            DishEntity dish = dishRepository.findById(dishAttribute.getDishId()).get();
-            DishDto dishDto = shoppingModelMapper.map(dish, DishDto.class);
-            dishAttributeDto.setDish(dishDto);
-            dishAttributeDtos.add(dishAttributeDto);
+            try {
+                DishAttributeDto dishAttributeDto = shoppingModelMapper.map(dishAttribute, DishAttributeDto.class);
+
+                // Get dish with error handling
+                DishEntity dish = dishRepository.findById(dishAttribute.getDishId())
+                        .orElseThrow(() -> new NotFoundException(
+                                "Dish with ID " + dishAttribute.getDishId() + " not found"));
+                DishDto dishDto = shoppingModelMapper.map(dish, DishDto.class);
+
+                dishAttributeDto.setDish(dishDto);
+                dishAttributeDtos.add(dishAttributeDto);
+            } catch (Exception e) {
+                // Log the error but continue processing other dishes
+                System.err
+                        .println("Error processing dish attribute ID " + dishAttribute.getId() + ": " + e.getMessage());
+                // Optionally skip this dish or add a default one
+            }
         }
+
         shoppingDto.setDishes(dishAttributeDtos);
         shoppingDto.setAttributes(attributeDtos);
 

@@ -30,7 +30,7 @@ function ModalDetailMarketOrder({
     leaderId,
     listMember,
     fridgeId,
-    statusstore,
+    // statusstore,
 }: ModalDetailMarketOrderProps) {
     const [reload, setReload] = useState(0);
     const [shopping, setShopping] = useState<shoppingProps>({} as shoppingProps);
@@ -40,7 +40,7 @@ function ModalDetailMarketOrder({
 
     const callApi = async () => {
         if (indexOrder === 0) return null;
-
+        console.log(indexOrder);
         try {
             const response = await axios.get(Url(`market/show/detail/${indexOrder}`));
             return response.data;
