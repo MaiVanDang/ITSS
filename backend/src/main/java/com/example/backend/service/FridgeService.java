@@ -56,6 +56,9 @@ public class FridgeService {
             IngredientsEntity ingredient = ingredientRepository.findById(ingredientFridge.getIngredientsId()).get();
             IngredientsDto ingredientsDto = modelMapper.map(ingredient, IngredientsDto.class);
             FridgeIngredientsDto fridgeDto = modelMapper.map(ingredientFridge, FridgeIngredientsDto.class);
+            // Chuyển đổi đơn vị đo lường sang số lượng
+            fridgeDto.setQuantityDouble(convertMeasureToQuantityResponse(ingredientFridge.getMeasure(),
+                    ingredientFridge.getQuantity()));
             fridgeDto.setIngredient(ingredientsDto);
             ingredientsDtos.add(fridgeDto);
         }
@@ -118,6 +121,9 @@ public class FridgeService {
             throw new NotCanDoException("Số lượng nguyên liệu không đủ");
         }
         // Cập nhật số lượng
+        if (entity.getQuantity() - quantity == 0) {
+            fridgeIngredientsRepository.delete(entity);
+        }
         entity.setQuantity(entity.getQuantity() - quantity);
         fridgeIngredientsRepository.save(entity);
     }

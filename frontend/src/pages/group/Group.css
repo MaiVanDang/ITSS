@@ -1,0 +1,117 @@
+/* Group.css */
+
+.group-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Header Section */
+.group-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.group-header h2 {
+  font-weight: 600;
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+/* Alert */
+.group-alert {
+  border-radius: 12px;
+  margin-bottom: 25px;
+}
+
+/* Groups Grid */
+.groups-grid {
+  margin-top: 20px;
+}
+
+.add-group-card {
+  border: 2px dashed #dee2e6;
+  background-color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+  text-align: center;
+  color: #6c757d;
+}
+
+.add-group-card:hover {
+  transform: translateY(-3px);
+  border-color: #007bff;
+  background-color: rgba(0, 123, 255, 0.05);
+  color: #007bff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.add-icon {
+  font-size: 3rem;
+  opacity: 0.7;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.empty-state .empty-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.empty-state h5 {
+  margin-bottom: 15px;
+  color: #495057;
+}
+
+.empty-state p {
+  margin-bottom: 25px;
+  font-size: 1rem;
+}
+
+/* Modal */
+.modal-header-custom {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+/* Action Buttons */
+.action-btn {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .group-header {
+    padding: 20px;
+  }
+  
+  .group-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .empty-state {
+    padding: 40px 15px;
+  }
+  
+  .empty-state .empty-icon {
+    font-size: 3rem;
+  }
+}

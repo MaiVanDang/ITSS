@@ -3,8 +3,6 @@ import { Badge, Button, Modal, Image, Table, Tabs, Tab, Form, Toast } from 'reac
 import Url from '../../utils/url';
 import { useEffect, useState } from 'react';
 import { shoppingProps, userInfoProps } from '../../utils/interface/Interface';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faToiletPortable } from '@fortawesome/free-solid-svg-icons';
 import { userInfo } from '../../utils/userInfo';
 
 interface ModalDetailMarketOrderProps {
@@ -45,7 +43,6 @@ function ModalDetailMarketOrder({
 
         try {
             const response = await axios.get(Url(`market/show/detail/${indexOrder}`));
-            console.log(response.data);
             return response.data;
         } catch (error) {
             console.error(error);
@@ -125,11 +122,6 @@ function ModalDetailMarketOrder({
         }
     };
 
-    // Kiểm tra xem nguyên liệu có phải là gia vị hoặc gạo không
-    const isSpiceOrRice = (ingredient: any) => {
-        return ingredient.name.includes('Gạo');
-    };
-
     // Kiểm tra nguyên liệu đã hết hạn chưa
     const isExpired = (expirationDate: string) => {
         if (!expirationDate) return false;
@@ -168,93 +160,6 @@ function ModalDetailMarketOrder({
         setShowToast(true);
     };
 
-    // Reset trạng thái mua của nguyên liệu hết hạn
-    const resetBuyStatus = async (ingredientId: number, measure: string) => {
-        try {
-            await axios.put(Url(`market/remove`), {
-                id: indexOrder,
-                attributeId: ingredientId,
-                measure,
-            });
-            setReload(Math.random());
-        } catch (error) {
-            console.log(error);
-            showToastMessage(ToastType.ERROR, 'Có lỗi xảy ra khi reset trạng thái mua');
-        }
-    };
-
-    // Thêm vào tủ lạnh - đã cập nhật với kiểm tra statusstore
-    const handleAddToFridge = async (
-        ingredientId: number,
-        quantity: number,
-        measure: string,
-        exprided: string,
-        ingredient: any,
-        ingredientStatus: string,
-        shoppingAttributeId: number,
-        statusstore: boolean
-    ) => {
-
-        // Kiểm tra xem nguyên liệu đã được thêm vào tủ lạnh chưa
-        if (statusstore === false) {
-            showToastMessage(ToastType.WARNING, `${ingredient.name} đã được thêm vào tủ lạnh rồi!`);
-            return;
-        }
-
-        // Kiểm tra nguyên liệu đã hết hạn chưa
-        if (isExpired(exprided)) {
-            showToastMessage(
-                ToastType.ERROR,
-                `${ingredient.name} đã hết hạn sử dụng (${exprided}). Bạn cần mua lại nguyên liệu mới trước khi thêm vào tủ lạnh để đảm bảo an toàn thực phẩm.`
-            );
-
-            // Reset trạng thái mua về chưa mua để buộc người dùng mua lại
-            await resetBuyStatus(ingredientId, measure);
-            return;
-        }
-
-        // Kiểm tra xem có phải gia vị nêm không
-        if (ingredientStatus === 'SEASONING') {
-            showToastMessage(ToastType.INFO, 'Không nhất thiết phải thêm gia vị nêm vào tủ lạnh.');
-            return;
-        }
-
-        // Kiểm tra xem có phải gạo không
-        if (isSpiceOrRice(ingredient)) {
-            showToastMessage(ToastType.INFO, `${ingredient.name} không nhất thiết phải thêm vào tủ lạnh.`);
-            return;
-        }
-
-        // Kiểm tra nguyên liệu sắp hết hạn
-        if (isExpiringSoon(exprided)) {
-            showToastMessage(
-                ToastType.WARNING,
-                `${ingredient.name} sắp hết hạn (${exprided}). Vui lòng sử dụng sớm hoặc cân nhắc mua lại.`
-            );
-            // Vẫn cho phép thêm vào tủ lạnh nhưng có cảnh báo
-        }
-
-        try {
-            await axios.post(Url(`fridge/ingredients`), {
-                fridgeId: fridgeId ? fridgeId : userInfo?.fridgeId,
-                ingredientId,
-                quantity,
-                measure,
-                exprided,
-                ingredientStatus,
-                ingredient,
-                shoppingAttributeId: shoppingAttributeId,
-            });
-
-            if (!isExpiringSoon(exprided)) {
-                showToastMessage(ToastType.SUCCESS, 'Thêm vào tủ lạnh thành công');
-            }
-            setReload(Math.random());
-        } catch (error: any) {
-            console.log(error);
-            showToastMessage(ToastType.ERROR, error.response?.data?.message || 'Có lỗi xảy ra khi thêm vào tủ lạnh');
-        }
-    };
 
     // Hàm để hiển thị trạng thái hết hạn
     const getExpirationStatus = (expirationDate: string) => {
@@ -349,7 +254,6 @@ function ModalDetailMarketOrder({
                                         <th>Ngày mua</th>
                                         <th>Ngày hết hạn</th>
                                         <th style={{ width: '5%' }}>Mua</th>
-                                        <th style={{ width: '5%' }}>Tủ lạnh</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -455,37 +359,6 @@ function ModalDetailMarketOrder({
 
                                                         }
                                                     />
-                                                </td>
-                                                <td className="text-center">
-                                                    {attribute.status === 1 ? (
-                                                        <div
-                                                            onClick={() =>
-                                                                handleAddToFridge(
-                                                                    attribute.ingredients.id,
-                                                                    attribute.quantity,
-                                                                    attribute.measure,
-                                                                    attribute.exprided,
-                                                                    attribute.ingredients,
-                                                                    attribute.ingredientStatus,
-                                                                    attribute.id,
-                                                                    attribute.statusstore // Truyền thêm statusstore
-                                                                )
-                                                            }
-                                                            style={{ cursor: 'pointer' }}
-                                                            className={
-                                                                isExpired(attribute.exprided) ? 'text-danger' :
-                                                                    attribute.statusstore === true ? 'text-success' : ''
-                                                            }
-                                                        >
-                                                            <FontAwesomeIcon
-                                                                size="xl"
-                                                                icon={faToiletPortable}
-                                                                className="p-1"
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <div></div>
-                                                    )}
                                                 </td>
                                             </tr>
                                         ))}

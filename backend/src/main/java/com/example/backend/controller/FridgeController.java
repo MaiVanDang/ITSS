@@ -32,7 +32,7 @@ public class FridgeController {
     @PutMapping("fridge/use-ingredient")
     public String useIngredient(@RequestBody Map<String, Object> request) {
         Integer id = (Integer) request.get("id");
-        Double quantityUsed = (Double) request.get("quantityUsed");
+        Double quantityUsed = ((Number) request.get("quantityUsed")).doubleValue();
         String unit = (String) request.get("unit");
         fridgeService.useIngredient(id, quantityUsed, unit);
         return "success";
