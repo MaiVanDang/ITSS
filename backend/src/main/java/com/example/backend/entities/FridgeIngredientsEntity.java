@@ -24,5 +24,7 @@ public class FridgeIngredientsEntity {
     private LocalDate exprided;
     @Column
     private LocalDate createAt;
+    @Column
+    private Integer userbuyid;
 
 }

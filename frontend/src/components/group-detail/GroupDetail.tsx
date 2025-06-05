@@ -178,9 +178,9 @@ function GroupDetail() {
                         {group.name}
                     </h2>
                     <div className="group-image-container">
-                        <img 
-                            src={group.image || 'https://via.placeholder.com/150'} 
-                            alt={group.name} 
+                        <img
+                            src={group.image || 'https://via.placeholder.com/150'}
+                            alt={group.name}
                             className="group-image"
                         />
                     </div>
@@ -197,8 +197,8 @@ function GroupDetail() {
             {/* Tabs */}
             <Tabs defaultActiveKey="market" id="group-detail-tabs" className="custom-tabs">
                 {/* Tab Đơn đi chợ */}
-                <Tab 
-                    eventKey="market" 
+                <Tab
+                    eventKey="market"
                     title={
                         <>
                             <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
@@ -228,7 +228,7 @@ function GroupDetail() {
                                         </thead>
                                         <tbody>
                                             {marketOrder.map((order, index) => (
-                                                <tr 
+                                                <tr
                                                     key={index}
                                                     className="cursor-pointer"
                                                     onClick={() => {
@@ -267,8 +267,8 @@ function GroupDetail() {
                 </Tab>
 
                 {/* Tab Thành viên */}
-                <Tab 
-                    eventKey="member" 
+                <Tab
+                    eventKey="member"
                     title={
                         <>
                             <FontAwesomeIcon icon={faUsers} className="me-2" />
@@ -296,8 +296,8 @@ function GroupDetail() {
                                             </div>
                                         </div>
                                         {group.leader?.id === userInfo?.id && member.id !== userInfo?.id && (
-                                            <Button 
-                                                variant="outline-danger" 
+                                            <Button
+                                                variant="outline-danger"
                                                 size="sm"
                                                 className="action-btn"
                                                 onClick={() => {
@@ -312,8 +312,8 @@ function GroupDetail() {
                                 ))}
 
                                 {userInfo?.id === group.leader?.id && (
-                                    <Button 
-                                        variant="primary" 
+                                    <Button
+                                        variant="primary"
                                         className="add-member-btn"
                                         onClick={() => setShowModalAddMember(true)}
                                     >
@@ -337,8 +337,8 @@ function GroupDetail() {
                             <Button variant="secondary" onClick={() => setShowModalDeleteMember(false)}>
                                 Hủy bỏ
                             </Button>
-                            <Button 
-                                variant="danger" 
+                            <Button
+                                variant="danger"
                                 onClick={() => {
                                     handleDeleteMember(currentMember.id);
                                     setShowModalDeleteMember(false);
@@ -357,10 +357,10 @@ function GroupDetail() {
                     />
 
                     {/* Toast thông báo */}
-                    <Toast 
-                        onClose={() => setShowToast(false)} 
-                        show={showToast} 
-                        delay={3000} 
+                    <Toast
+                        onClose={() => setShowToast(false)}
+                        show={showToast}
+                        delay={3000}
                         autohide
                         className="toast-success"
                     >
@@ -372,8 +372,8 @@ function GroupDetail() {
                 </Tab>
 
                 {/* Tab Tủ lạnh */}
-                <Tab 
-                    eventKey="fridge" 
+                <Tab
+                    eventKey="fridge"
                     title={
                         <>
                             <FontAwesomeIcon icon={faSnowflake} className="me-2" />
@@ -396,36 +396,56 @@ function GroupDetail() {
                                             <tr>
                                                 <th>STT</th>
                                                 <th>Ảnh</th>
-                                                <th>Tên nguyên liệu</th>
+                                                <th>Tên thực phẩm</th>
                                                 <th>Số lượng</th>
                                                 <th>Đơn vị</th>
+                                                <th>Loại</th>
+                                                <th>Người mua</th>
                                                 <th>Ngày thêm</th>
                                                 <th>Ngày hết hạn</th>
                                                 <th>Trạng thái</th>
-                                                <th>Hành động</th>
+                                                <th>Sử dụng</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {fridge.ingredients?.map((item, index) => {
                                                 const { status, style, tooltipText } = getExpiryStatus(item.exprided);
+                                                const getIngredientType = (status: string) => {
+                                                    switch (status) {
+                                                        case 'INGREDIENT':
+                                                            return <Badge pill bg="primary">Nguyên liệu</Badge>;
+                                                        case 'FRESH_INGREDIENT':
+                                                            return <Badge pill bg="success">Nguyên liệu tươi</Badge>;
+                                                        case 'DRY_INGREDIENT':
+                                                            return <Badge pill bg="secondary">Nguyên liệu khô</Badge>;
+                                                        case 'SEASONING':
+                                                            return <Badge pill bg="warning">Gia vị nêm</Badge>;
+                                                        default:
+                                                            return <Badge pill bg="light">Không xác định</Badge>;
+                                                    }
+                                                };
                                                 return (
                                                     <tr key={index} style={style} title={tooltipText}>
                                                         <td>{index + 1}</td>
                                                         <td>
-                                                            <img 
-                                                                src={item.ingredient.image} 
+                                                            <img
+                                                                src={item.ingredient.image}
                                                                 alt={item.ingredient.name}
                                                                 className="ingredient-image"
                                                             />
                                                         </td>
                                                         <td>
-                                                            <div className="ingredient-name">{item.ingredient.name}</div>
+                                                            <div className="fw-bold text-dark">{item.ingredient.name}</div>
                                                             {status === 'Đã hết hạn' && (
-                                                                <small className="text-danger">Đã hết hạn</small>
+                                                                <small className="text-danger fw-medium">
+                                                                    Đã hết hạn - Không nên sử dụng
+                                                                </small>
                                                             )}
                                                         </td>
                                                         <td>{item.quantityDouble}</td>
                                                         <td>{item.measure}</td>
+                                                        <td className="text-center">{getIngredientType(item.ingredient.ingredientStatus)}</td>
+                                                        <td className="text-center"><Badge bg="info">{item.userBuyName}</Badge></td>
                                                         <td>{formatDate(item.createAt)}</td>
                                                         <td>{formatDate(item.exprided)}</td>
                                                         <td>
@@ -471,8 +491,8 @@ function GroupDetail() {
 
                 {/* Tab Cài đặt */}
                 {userInfo?.id === group.leader?.id && (
-                    <Tab 
-                        eventKey="settings" 
+                    <Tab
+                        eventKey="settings"
                         title={
                             <>
                                 <FontAwesomeIcon icon={faGear} className="me-2" />
@@ -493,8 +513,8 @@ function GroupDetail() {
                                                 onChange={(e) => setEditNameGroup(e.target.value)}
                                                 placeholder="Nhập tên nhóm mới"
                                             />
-                                            <Button 
-                                                variant="primary" 
+                                            <Button
+                                                variant="primary"
                                                 className="ms-2"
                                                 onClick={handleEditNameGroup}
                                             >
@@ -512,8 +532,8 @@ function GroupDetail() {
                                                 onChange={(e) => setEditImageGroup(e.target.value)}
                                                 placeholder="Nhập URL ảnh mới"
                                             />
-                                            <Button 
-                                                variant="primary" 
+                                            <Button
+                                                variant="primary"
                                                 className="ms-2"
                                                 onClick={handleEditImage}
                                             >
@@ -525,8 +545,8 @@ function GroupDetail() {
                                     <div className="danger-zone mt-5">
                                         <h5 className="text-danger">Khu vực nguy hiểm</h5>
                                         <p className="text-muted">Các thao tác này không thể hoàn tác</p>
-                                        <Button 
-                                            variant="outline-danger" 
+                                        <Button
+                                            variant="outline-danger"
                                             onClick={() => setShowModalDeleteGroup(true)}
                                         >
                                             Xóa nhóm

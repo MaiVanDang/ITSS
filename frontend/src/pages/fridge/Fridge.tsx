@@ -392,10 +392,7 @@ function Fridge() {
 
                                             // Giả định người mua (nếu có thông tin từ fridge.group hoặc fridge.user)
                                             const getBuyerName = () => {
-                                                if (fridge.group?.groupMembers?.length > 0) {
-                                                    // Nếu là tủ lạnh nhóm, có thể hiển thị tên nhóm
-                                                    return fridge.group.name;
-                                                } else if (fridge.user) {
+                                                if (fridge.user) {
                                                     // Nếu là tủ lạnh cá nhân
                                                     return fridge.user.name;
                                                 }

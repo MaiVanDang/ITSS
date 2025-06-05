@@ -6,6 +6,8 @@ export interface ingredientsProps {
     exprided?: string;
     createAt?: string;
     quantityDouble: number;
+    userBuy: userInfoProps,
+    userBuyName: string;
 }
 export interface ingredientProps {
     id: number;

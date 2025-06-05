@@ -31,24 +31,20 @@ public class FridgeService {
     private final ShoppingAttributeRepository shoppingAttributeRepository;
     private final ModelMapper modelMapper;
 
-    public FridgeDto getDetailGroupFridge(Integer id) {
+    public FridgeDto getDetailGroupFridge(Integer groupId) {
 
-        FridgeEntity entity = fridgeRepository.findByGroupId(id);
+        FridgeEntity entity = fridgeRepository.findByGroupId(groupId);
         FridgeDto dto = new FridgeDto();
         dto = modelMapper.map(entity, FridgeDto.class);
-        if (entity.getGroupId() != null) {
 
-            GroupEntity groupEntity = groupRepository.findById(entity.getGroupId()).get();
-            GroupDto groupDto = modelMapper.map(groupEntity, GroupDto.class);
-            UserEntity leader = userRepository.findById(groupEntity.getLeader()).get();
-            UserDto userDto = modelMapper.map(leader, UserDto.class);
-            groupDto.setLeader(userDto);
-            dto.setGroup(groupDto);
-        } else {
-            UserEntity user = userRepository.findById(entity.getUserId()).get();
-            UserDto userDto = modelMapper.map(user, UserDto.class);
-            dto.setUser(userDto);
-        }
+        GroupEntity groupEntity = groupRepository.findById(entity.getGroupId()).get();
+        GroupDto groupDto = modelMapper.map(groupEntity, GroupDto.class);
+
+        UserEntity userLeader = userRepository.findById(entity.getUserId()).get();
+        UserDto userLeaderDto = modelMapper.map(userLeader, UserDto.class);
+
+        groupDto.setLeader(userLeaderDto);
+        dto.setGroup(groupDto);
 
         List<FridgeIngredientsDto> ingredientsDtos = new ArrayList<FridgeIngredientsDto>();
         List<FridgeIngredientsEntity> ingredients = fridgeIngredientsRepository.findByFridgeId(entity.getId());
@@ -60,6 +56,14 @@ public class FridgeService {
             fridgeDto.setQuantityDouble(convertMeasureToQuantityResponse(ingredientFridge.getMeasure(),
                     ingredientFridge.getQuantity()));
             fridgeDto.setIngredient(ingredientsDto);
+
+            if (ingredientFridge.getUserbuyid() != null) {
+                UserEntity userBuy = userRepository.findById(ingredientFridge.getUserbuyid()).get();
+                UserDto userBuyDto = modelMapper.map(userBuy, UserDto.class);
+                fridgeDto.setUseBuy(userBuyDto);
+                fridgeDto.setUserBuyName(userBuyDto.getName());
+            }
+
             ingredientsDtos.add(fridgeDto);
         }
         dto.setIngredients(ingredientsDtos);

@@ -13,4 +13,6 @@ public class FridgeIngredientsDto {
     private String measure;
     private LocalDate createAt;
     private double quantityDouble;
+    UserDto useBuy;
+    private String userBuyName;
 }
