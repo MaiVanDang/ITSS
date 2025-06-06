@@ -28,4 +28,6 @@ public interface StoreRepository extends JpaRepository<StoreEntity, Integer> {
 
         List<StoreEntity> findByGroupId(Integer groupId);
 
+        List<StoreEntity> findByGroupIdAndUserId(Integer groupId, Integer userId);
+
 }

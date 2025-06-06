@@ -16,4 +16,5 @@ public interface FridgeIngredientsRepository extends JpaRepository<FridgeIngredi
         FridgeIngredientsEntity findByExpridedAndFridgeIdAndIngredientsId(
                         LocalDate exprided, Integer fridgeId, Integer ingredientsId);
 
+        List<FridgeIngredientsEntity> findByFridgeIdAndUserbuyid(Integer fridgeId, Integer userbuyid);
 }

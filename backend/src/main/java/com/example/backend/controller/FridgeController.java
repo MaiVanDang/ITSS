@@ -62,6 +62,7 @@ public class FridgeController {
         Object ingredientImageObj = request.get("ingredientImage");
         Object ingredientStatusObj = request.get("ingredientStatus");
         Object quantityObj = request.get("quantity");
+        Object userNameBuyObj = request.get("userBuyName");
         Object measureObj = request.get("measure");
         Object expridedObj = request.get("exprided");
         Object buyAtObject = request.get("buyAt");
@@ -71,6 +72,7 @@ public class FridgeController {
         Integer ingredientId = (ingredientsIdObj instanceof Number) ? ((Number) ingredientsIdObj).intValue() : null;
         String ingredientName = (ingredientNameObj instanceof String) ? (String) ingredientNameObj : null;
         String ingredientImage = (ingredientImageObj instanceof String) ? (String) ingredientImageObj : null;
+        String userNameBuy = (userNameBuyObj instanceof String) ? (String) userNameBuyObj : null;
         String ingredientStatus = (ingredientStatusObj instanceof String) ? (String) ingredientStatusObj : null;
         BigDecimal quantity = (quantityObj instanceof Number) ? BigDecimal.valueOf(((Number) quantityObj).doubleValue())
                 : null;
@@ -87,6 +89,7 @@ public class FridgeController {
         storeDto.setQuantity(quantity);
         storeDto.setMeasure(measure);
         storeDto.setExpridedAt(expridedWhenShopping);
+        storeDto.setUserNameBuy(userNameBuy);
         storeDto.setBuyAt(buyAt);
 
         fridgeService.addIngredientsFromStore(storeDto, userId);

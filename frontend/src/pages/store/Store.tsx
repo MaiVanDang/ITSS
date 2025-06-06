@@ -231,6 +231,7 @@ function Store() {
                 ingredientName: item.ingredientName,
                 ingredientImage: item.ingredientImage,
                 ingredientStatus: item.ingredientStatus,
+                userBuyName: item.userName,
             };
             console.log(requestData);
             await axios.post(Url(`fridge/store/ingredients`), requestData);

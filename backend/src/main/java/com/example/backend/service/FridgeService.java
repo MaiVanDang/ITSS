@@ -149,13 +149,21 @@ public class FridgeService {
     public void addIngredientsFromStore(StoreDto storeDto, Integer userId) {
 
         StoreEntity storeEntity = storeRepository.findById(storeDto.getStoreId()).get();
+        System.out.println("store: " + storeEntity);
         List<FridgeEntity> fridgeEntities = fridgeRepository.findByUserId(userId);
+        UserEntity userEntity = userRepository.findByName(storeDto.getUserNameBuy());
+
+        System.out.println("Id:" + userEntity.getId());
 
         if (storeEntity.getGroupId() == null) {
+            System.out.println("Buoc 1");
+
             IngredientsEntity ingredient = ingredientRepository.findById(storeDto.getIngredientsId()).get();
             LocalDate newExpridedAt = calculateNewExpiryDate(storeDto.getExpridedAt(), ingredient);
             FridgeEntity entity = new FridgeEntity();
             for (FridgeEntity fridgeEntity : fridgeEntities) {
+                System.out.println("Buoc 2");
+
                 if (fridgeEntity.getGroupId() == null) {
                     entity = fridgeEntity;
                     break;
@@ -165,15 +173,20 @@ public class FridgeService {
                     .findByExpridedAndFridgeIdAndIngredientsId(newExpridedAt, entity.getId(),
                             storeDto.getIngredientsId());
             if (oldFridgeIngredientsEntity != null) {
+
+                System.out.println("Buoc 3");
                 // Nếu nguyên liệu đã tồn tại trong tủ lạnh, cộng dồn số lượng
                 oldFridgeIngredientsEntity
                         .setQuantity(oldFridgeIngredientsEntity.getQuantity() + storeDto.getQuantity().intValue());
                 fridgeIngredientsRepository.save(oldFridgeIngredientsEntity);
             } else {
+
+                System.out.println("Buoc 4");
                 // Nếu nguyên liệu chưa tồn tại, tạo mới
                 FridgeIngredientsEntity newFridgeIngredient = new FridgeIngredientsEntity();
                 newFridgeIngredient.setIngredientsId(storeDto.getIngredientsId());
                 newFridgeIngredient.setFridgeId(entity.getId());
+                newFridgeIngredient.setUserbuyid(userEntity.getId());
                 newFridgeIngredient.setQuantity(storeDto.getQuantity().intValue());
                 newFridgeIngredient.setMeasure(storeDto.getMeasure());
                 newFridgeIngredient.setExprided(newExpridedAt);
@@ -183,24 +196,30 @@ public class FridgeService {
             // Cập nhật số lượng trong kho
             storeRepository.delete(storeEntity);
         } else {
+            System.out.println("Buoc 5");
+
             FridgeEntity fridgeEntity = fridgeRepository.findByGroupId(storeEntity.getGroupId());
             IngredientsEntity ingredient = ingredientRepository.findById(storeDto.getIngredientsId()).get();
             LocalDate newExpridedAt = calculateNewExpiryDate(storeDto.getExpridedAt(), ingredient);
             FridgeIngredientsEntity oldFridgeIngredientsEntity = fridgeIngredientsRepository
                     .findByExpridedAndFridgeIdAndIngredientsId(newExpridedAt, fridgeEntity.getId(),
                             storeDto.getIngredientsId());
-            if (oldFridgeIngredientsEntity != null) {
+            if (oldFridgeIngredientsEntity != null && oldFridgeIngredientsEntity.getUserbuyid() == userEntity.getId()) {
+                System.out.println("Buoc 6");
                 // Nếu nguyên liệu đã tồn tại trong tủ lạnh, cộng dồn số lượng
                 oldFridgeIngredientsEntity
                         .setQuantity(oldFridgeIngredientsEntity.getQuantity() + storeDto.getQuantity().intValue());
                 fridgeIngredientsRepository.save(oldFridgeIngredientsEntity);
             } else {
+
+                System.out.println("Buoc 7");
                 // Nếu nguyên liệu chưa tồn tại, tạo mới
                 FridgeIngredientsEntity newFridgeIngredient = new FridgeIngredientsEntity();
                 newFridgeIngredient.setIngredientsId(storeDto.getIngredientsId());
                 newFridgeIngredient.setFridgeId(fridgeEntity.getId());
                 newFridgeIngredient.setQuantity(storeDto.getQuantity().intValue());
                 newFridgeIngredient.setMeasure(storeDto.getMeasure());
+                newFridgeIngredient.setUserbuyid(userEntity.getId());
                 newFridgeIngredient.setExprided(newExpridedAt);
                 newFridgeIngredient.setCreateAt(now());
                 fridgeIngredientsRepository.save(newFridgeIngredient);

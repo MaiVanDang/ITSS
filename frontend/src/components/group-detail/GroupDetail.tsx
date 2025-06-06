@@ -81,6 +81,7 @@ function GroupDetail() {
         const fetchApiGroupFridge = async () => {
             try {
                 const results = await axios.get(Url(`fridge/group/${param.id}`));
+                console.log(results.data);
                 setFridge(results.data);
             } catch (error: any) {
                 alert(error.response.data.message);

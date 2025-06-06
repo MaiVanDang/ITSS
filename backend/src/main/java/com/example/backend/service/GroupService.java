@@ -29,6 +29,8 @@ public class GroupService {
     private final FridgeRepository fridgeRepository;
     private final FridgeIngredientsRepository ingredientsRepository;
     private final ModelMapper modelMapper;
+    private final StoreRepository storeRepository;
+    private final FridgeIngredientsRepository fridgeIngredientsRepository;
 
     public List<GroupDto> getAllGroups() {
         List<GroupEntity> entities = groupRepository.findAll();
@@ -119,6 +121,37 @@ public class GroupService {
     }
 
     public void deleteMember(Integer groupId, Integer userId) {
+
+        // Xóa người đó trong nhà kho
+        List<StoreEntity> storeEntities = storeRepository.findByGroupIdAndUserId(groupId, userId);
+        if (storeEntities != null) {
+            for (StoreEntity storeEntity : storeEntities) {
+                storeEntity.setGroupId(null);
+                storeRepository.save(storeEntity);
+            }
+        }
+        // Xóa trong nhóm nếu liên quan đến người đó
+        Integer fridgeIdMust = 0;
+        List<FridgeEntity> fridgeEntities = fridgeRepository.findByUserId(userId);
+        for (FridgeEntity fridgeEntity : fridgeEntities) {
+            if (fridgeEntity.getGroupId() == null) {
+                fridgeIdMust = fridgeEntity.getId();
+                break;
+            }
+        }
+
+        FridgeEntity fridgeEntity = fridgeRepository.findByGroupId(groupId);
+        if (fridgeEntity != null) {
+            List<FridgeIngredientsEntity> fridgeIngredientsEntities = fridgeIngredientsRepository
+                    .findByFridgeIdAndUserbuyid(fridgeEntity.getId(), userId);
+            if (fridgeIngredientsEntities != null) {
+                for (FridgeIngredientsEntity fridgeIngredientsEntity : fridgeIngredientsEntities) {
+                    fridgeIngredientsEntity.setFridgeId(fridgeIdMust);
+                    fridgeIngredientsRepository.save(fridgeIngredientsEntity);
+                }
+            }
+        }
+
         GroupMemberEntity member = groupMemberRepository.findByGroupIdAndUserId(groupId, userId);
         groupMemberRepository.deleteById(member.getId());
     }
