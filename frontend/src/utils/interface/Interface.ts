@@ -137,4 +137,11 @@ export interface dishIngredients {
     measure: string;
     dish: dishsProps;
     checkQuantity: number;
+    supportDishDto: supportDishDto[] | null;
+}
+
+export interface supportDishDto {
+    positionName: string;
+    quantityDoublePresent: number;
+    measure: string;
 }

@@ -3,20 +3,26 @@ package com.example.backend.service;
 import com.example.backend.dtos.DishDto;
 import com.example.backend.dtos.DishIngredientsDto;
 import com.example.backend.dtos.IngredientsDto;
+import com.example.backend.dtos.SupportDishDto;
 import com.example.backend.entities.DishEntity;
 import com.example.backend.entities.DishIngredientsEntity;
 import com.example.backend.entities.FridgeEntity;
 import com.example.backend.entities.FridgeIngredientsEntity;
+import com.example.backend.entities.GroupEntity;
 import com.example.backend.entities.GroupMemberEntity;
 import com.example.backend.entities.IngredientsEntity;
 import com.example.backend.entities.StoreEntity;
 import com.example.backend.exception.DuplicateException;
 import com.example.backend.repository.*;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.time.LocalDate.now;
 
@@ -34,6 +40,7 @@ public class DishService {
     private final FridgeRepository fridgeRepository;
     private final FridgeIngredientsRepository fridgeIngredientsRepository;
     private final GroupMemberRepository groupMemberRepository;
+    private final GroupRepository groupRepository;
 
     public List<DishDto> getAllDishes(Integer userId) {
         List<DishDto> dtos = new ArrayList<DishDto>();
@@ -72,29 +79,145 @@ public class DishService {
         return dto;
     }
 
-    public DishDto getDetailDishById(Integer dishId, Integer userId) {
-        DishEntity dishEntity = dishRepository.findById(dishId)
-                .orElseThrow(() -> new RuntimeException("Dish not found"));
-        DishDto dto = dishModelMapper.map(dishEntity, DishDto.class);
-        List<DishIngredientsEntity> ingredients = dishIngredientRepository.findByDishId(dishEntity.getId());
-        List<DishIngredientsDto> ingredientsDtos = new ArrayList<>();
+    // public DishDto getDetailDishById(Integer dishId, Integer userId) {
+    // DishEntity dishEntity = dishRepository.findById(dishId)
+    // .orElseThrow(() -> new RuntimeException("Dish not found"));
+    // DishDto dto = dishModelMapper.map(dishEntity, DishDto.class);
+    // List<DishIngredientsEntity> ingredients =
+    // dishIngredientRepository.findByDishId(dishEntity.getId());
+    // List<DishIngredientsDto> ingredientsDtos = new ArrayList<>();
 
-        for (DishIngredientsEntity ingredient : ingredients) {
-            IngredientsEntity ingredientsEntity = ingredientsRepository.findById(ingredient.getIngredientsId())
-                    .orElseThrow(() -> new RuntimeException("Ingredient not found"));
-            IngredientsDto ingredientDto = dishModelMapper.map(ingredientsEntity, IngredientsDto.class);
-            DishIngredientsDto dishIngredientsDto = new DishIngredientsDto();
-            dishIngredientsDto.setIngredient(ingredientDto);
-            dishIngredientsDto.setQuantity(ingredient.getQuantity());
-            dishIngredientsDto.setMeasure(ingredient.getMeasure());
-            int checkQuantity = checkQuantityIngredient(userId, ingredient.getIngredientsId(),
-                    ingredient.getQuantity(), ingredient.getMeasure());
-            dishIngredientsDto.setCheckQuantity(checkQuantity);
-            ingredientsDtos.add(dishIngredientsDto);
-        }
-        dto.setIngredients(ingredientsDtos);
-        return dto;
-    }
+    // for (DishIngredientsEntity ingredient : ingredients) {
+    // IngredientsEntity ingredientsEntity =
+    // ingredientsRepository.findById(ingredient.getIngredientsId())
+    // .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+    // IngredientsDto ingredientDto = dishModelMapper.map(ingredientsEntity,
+    // IngredientsDto.class);
+    // DishIngredientsDto dishIngredientsDto = new DishIngredientsDto();
+    // dishIngredientsDto.setIngredient(ingredientDto);
+    // dishIngredientsDto.setQuantity(ingredient.getQuantity());
+    // dishIngredientsDto.setMeasure(ingredient.getMeasure());
+    // int checkQuantity = checkQuantityIngredient(userId,
+    // ingredient.getIngredientsId(),
+    // ingredient.getQuantity(), ingredient.getMeasure());
+    // dishIngredientsDto.setCheckQuantity(checkQuantity);
+    // List<SupportDishDto> supportDishDtos = new ArrayList<>();
+    // // Thiết lập vị trí và số lượng hiện có
+    // if (checkQuantity == 0) {
+    // dishIngredientsDto.setSupportDishDto(null);
+    // } else {
+    // // Store
+    // // Ca nhan
+    // SupportDishDto supportDishDto = new SupportDishDto();
+    // List<StoreEntity> storeEntities =
+    // storeRepository.findByUserIdAndIngredientId(userId,
+    // ingredient.getIngredientsId());
+    // Double quantityPresent;
+    // if (storeEntities != null && !storeEntities.isEmpty()) {
+    // quantityPresent = 0.0;
+    // for (StoreEntity store : storeEntities) {
+    // if (!isExpridedAt(store.getExpridedAt()) && store.getGroupId() == null) {
+    // quantityPresent += convertMeasureToQuantityResponse(store.getMeasure(),
+    // store.getQuantity().intValue());
+    // supportDishDto.setMeasure(store.getMeasure());
+    // }
+    // }
+    // supportDishDto.setQuantityDoublePresent(quantityPresent);
+    // supportDishDto.setPositionName("Kho cá nhân");
+    // supportDishDtos.add(supportDishDto);
+    // }
+
+    // // Nhom
+    // List<GroupMemberEntity> groupEntities =
+    // groupMemberRepository.findByUserId(userId);
+    // if (groupEntities != null) {
+    // for (GroupMemberEntity groupEntity : groupEntities) {
+    // int groupId = groupEntity.getGroupId();
+
+    // storeEntities = storeRepository.findByGroupIdAndIngredientId(groupId,
+    // ingredient.getIngredientsId());
+    // if (storeEntities != null && !storeEntities.isEmpty()) {
+    // quantityPresent = 0.0;
+    // for (StoreEntity store : storeEntities) {
+    // if (!isExpridedAt(store.getExpridedAt())) {
+    // quantityPresent += convertMeasureToQuantityResponse(store.getMeasure(),
+    // store.getQuantity().intValue());
+    // supportDishDto.setMeasure(store.getMeasure());
+    // }
+    // }
+    // supportDishDto.setQuantityDoublePresent(quantityPresent);
+    // GroupEntity group = groupRepository.findById(groupId)
+    // .orElseThrow(() -> new RuntimeException("Group not found"));
+    // supportDishDto.setPositionName(group.getName());
+    // supportDishDtos.add(supportDishDto);
+    // }
+    // }
+    // }
+
+    // // Tủ lạnh
+    // // Ca nhan
+    // List<FridgeEntity> fridgeEntity = fridgeRepository.findByUserId(userId);
+    // int newFridgeId = 0;
+    // for (FridgeEntity fridge : fridgeEntity) {
+    // if (fridge.getGroupId() == null || fridge.getGroupId() == 0) {
+    // newFridgeId = fridge.getId();
+    // break;
+    // }
+    // }
+    // List<FridgeIngredientsEntity> fridgeIngredients = fridgeIngredientsRepository
+    // .findByFridgeIdAndIngredientsId(newFridgeId, ingredient.getIngredientsId());
+    // if (fridgeIngredients != null && !fridgeIngredients.isEmpty()) {
+    // quantityPresent = 0.0;
+    // for (FridgeIngredientsEntity fridgeIngredient : fridgeIngredients) {
+    // if (!isExpridedAt(fridgeIngredient.getExprided())) {
+    // quantityPresent +=
+    // convertMeasureToQuantityResponse(fridgeIngredient.getMeasure(),
+    // fridgeIngredient.getQuantity().intValue());
+    // supportDishDto.setMeasure(fridgeIngredient.getMeasure());
+    // }
+    // }
+    // supportDishDto.setQuantityDoublePresent(quantityPresent);
+    // supportDishDto.setPositionName("tủ lạnh cá nhân");
+    // supportDishDtos.add(supportDishDto);
+    // }
+
+    // // Nhom
+    // groupEntities = groupMemberRepository.findByUserId(userId);
+    // if (groupEntities != null) {
+    // for (GroupMemberEntity groupEntity : groupEntities) {
+
+    // int groupId = groupEntity.getGroupId();
+
+    // newFridgeId = fridgeRepository.findByGroupId(groupId).getId();
+    // fridgeIngredients = fridgeIngredientsRepository
+    // .findByFridgeIdAndIngredientsId(newFridgeId, ingredient.getIngredientsId());
+    // if (fridgeIngredients != null && !fridgeIngredients.isEmpty()) {
+    // quantityPresent = 0.0;
+    // for (FridgeIngredientsEntity fridgeIngredient : fridgeIngredients) {
+    // if (!isExpridedAt(fridgeIngredient.getExprided())) {
+    // quantityPresent +=
+    // convertMeasureToQuantityResponse(fridgeIngredient.getMeasure(),
+    // fridgeIngredient.getQuantity().intValue());
+    // supportDishDto.setMeasure(fridgeIngredient.getMeasure());
+    // }
+    // }
+    // supportDishDto.setQuantityDoublePresent(quantityPresent);
+    // GroupEntity group = groupRepository.findById(groupId)
+    // .orElseThrow(() -> new RuntimeException("Group not found"));
+    // supportDishDto.setPositionName(group.getName());
+    // supportDishDtos.add(supportDishDto);
+    // }
+    // }
+    // }
+
+    // dishIngredientsDto.setSupportDishDto(supportDishDtos);
+    // }
+
+    // ingredientsDtos.add(dishIngredientsDto);
+    // }
+    // dto.setIngredients(ingredientsDtos);
+    // return dto;
+    // }
 
     public List<DishDto> getDishByFilter(String name, Integer status, String type, Integer userId) {
         List<DishDto> dtos = new ArrayList<DishDto>();
@@ -195,7 +318,8 @@ public class DishService {
             for (StoreEntity store : storeEntity) {
                 // Chuyển đổi đơn vị đo lường nếu cần
                 int convertedQuantity = convertMeasureToQuantity(store.getMeasure(), store.getQuantity().intValue());
-                if (convertedQuantity >= quantity && !isExpridedAt(store.getExpridedAt())) {
+                if (convertedQuantity >= quantity && !isExpridedAt(store.getExpridedAt())
+                        && store.getGroupId() == null) {
                     // Nếu số lượng trong kho đủ và chưa hết hạn
                     isStore = true; // Tồn tại đủ số lượng trong kho
                     break;
@@ -317,5 +441,255 @@ public class DishService {
         // Kiểm tra xem ngày hết hạn đã qua chưa
         return expiredAt.isBefore(now());
     }
+
+    private Double convertMeasureToQuantityResponse(String measure, int quantity) {
+        double quantityDouble = (double) quantity;
+
+        if (measure.equals("kg")) {
+            // Chuyển đổi gram sang kg
+            quantityDouble = (double) quantity / 1000;
+        } else if (measure.equals("lít")) {
+            // Chuyển đổi ml sang lít
+            quantityDouble = (double) quantity / 1000;
+        } else if (measure.equals("chai")) {
+            // Giả sử chai là 1000ml
+            quantityDouble = ((double) quantity) / 1000;
+        } else {
+            // Giả sử các đơn vị khác không cần chuyển đổi
+            quantityDouble = (double) quantity;
+        }
+        return quantityDouble;
+    }
+
+    public DishDto getDetailDishById(Integer dishId, Integer userId) {
+        // Tìm dish và throw custom exception thay vì RuntimeException
+        DishEntity dishEntity = dishRepository.findById(dishId)
+                .orElseThrow(() -> new EntityNotFoundException("Dish not found with id: " + dishId));
+
+        DishDto dto = dishModelMapper.map(dishEntity, DishDto.class);
+
+        // Lấy tất cả ingredients của dish một lần
+        List<DishIngredientsEntity> ingredients = dishIngredientRepository.findByDishId(dishEntity.getId());
+        if (ingredients.isEmpty()) {
+            dto.setIngredients(new ArrayList<>());
+            return dto;
+        }
+
+        // Lấy tất cả ingredient IDs để query batch
+        Set<Integer> ingredientIds = ingredients.stream()
+                .map(DishIngredientsEntity::getIngredientsId)
+                .collect(Collectors.toSet());
+
+        // Batch query ingredients thay vì query từng cái một
+        Map<Integer, IngredientsEntity> ingredientsMap = ingredientsRepository
+                .findAllById(ingredientIds)
+                .stream()
+                .collect(Collectors.toMap(IngredientsEntity::getId, Function.identity()));
+
+        // Lấy group memberships một lần thay vì query nhiều lần
+        List<GroupMemberEntity> userGroups = groupMemberRepository.findByUserId(userId);
+        Set<Integer> groupIds = userGroups.stream()
+                .map(GroupMemberEntity::getGroupId)
+                .collect(Collectors.toSet());
+
+        List<DishIngredientsDto> ingredientsDtos = new ArrayList<>();
+
+        for (DishIngredientsEntity ingredient : ingredients) {
+            IngredientsEntity ingredientsEntity = ingredientsMap.get(ingredient.getIngredientsId());
+            if (ingredientsEntity == null) {
+                throw new EntityNotFoundException("Ingredient not found with id: " + ingredient.getIngredientsId());
+            }
+
+            IngredientsDto ingredientDto = dishModelMapper.map(ingredientsEntity, IngredientsDto.class);
+            DishIngredientsDto dishIngredientsDto = new DishIngredientsDto();
+            dishIngredientsDto.setIngredient(ingredientDto);
+            dishIngredientsDto.setQuantity(ingredient.getQuantity());
+            dishIngredientsDto.setMeasure(ingredient.getMeasure());
+
+            int checkQuantity = checkQuantityIngredient(userId, ingredient.getIngredientsId(),
+                    ingredient.getQuantity(), ingredient.getMeasure());
+            dishIngredientsDto.setCheckQuantity(checkQuantity);
+
+            if (checkQuantity == 0) {
+                dishIngredientsDto.setSupportDishDto(null);
+            } else {
+                List<SupportDishDto> supportDishDtos = buildSupportDishDtos(userId, groupIds,
+                        ingredient.getIngredientsId());
+                dishIngredientsDto.setSupportDishDto(supportDishDtos);
+            }
+
+            ingredientsDtos.add(dishIngredientsDto);
+        }
+
+        dto.setIngredients(ingredientsDtos);
+        return dto;
+    }
+
+    // Tách logic phức tạp thành method riêng
+    private List<SupportDishDto> buildSupportDishDtos(Integer userId, Set<Integer> groupIds, Integer ingredientId) {
+        List<SupportDishDto> supportDishDtos = new ArrayList<>();
+
+        // Xử lý store cá nhân
+        addPersonalStoreSupport(userId, ingredientId, supportDishDtos);
+
+        // Xử lý store nhóm
+        addGroupStoreSupport(groupIds, ingredientId, supportDishDtos);
+
+        // Xử lý fridge cá nhân
+        addPersonalFridgeSupport(userId, ingredientId, supportDishDtos);
+
+        // Xử lý fridge nhóm
+        addGroupFridgeSupport(groupIds, ingredientId, supportDishDtos);
+
+        return supportDishDtos;
+    }
+
+    private void addPersonalStoreSupport(Integer userId, Integer ingredientId, List<SupportDishDto> supportDishDtos) {
+        List<StoreEntity> storeEntities = storeRepository.findByUserIdAndIngredientId(userId, ingredientId);
+        if (storeEntities != null && !storeEntities.isEmpty()) {
+            double quantityPresent = 0.0;
+            String measure = null;
+
+            for (StoreEntity store : storeEntities) {
+                if (!isExpridedAt(store.getExpridedAt()) && store.getGroupId() == null) {
+                    quantityPresent += convertMeasureToQuantityResponse(store.getMeasure(),
+                            store.getQuantity().intValue());
+                    if (measure == null) {
+                        measure = store.getMeasure();
+                    }
+                }
+            }
+
+            if (quantityPresent > 0) {
+                SupportDishDto supportDishDto = new SupportDishDto();
+                supportDishDto.setQuantityDoublePresent(quantityPresent);
+                supportDishDto.setMeasure(measure);
+                supportDishDto.setPositionName("Kho cá nhân");
+                supportDishDtos.add(supportDishDto);
+            }
+        }
+    }
+
+    private void addGroupStoreSupport(Set<Integer> groupIds, Integer ingredientId,
+            List<SupportDishDto> supportDishDtos) {
+        for (Integer groupId : groupIds) {
+            List<StoreEntity> storeEntities = storeRepository.findByGroupIdAndIngredientId(groupId, ingredientId);
+            if (storeEntities != null && !storeEntities.isEmpty()) {
+                double quantityPresent = 0.0;
+                String measure = null;
+
+                for (StoreEntity store : storeEntities) {
+                    if (!isExpridedAt(store.getExpridedAt())) {
+                        quantityPresent += convertMeasureToQuantityResponse(store.getMeasure(),
+                                store.getQuantity().intValue());
+                        if (measure == null) {
+                            measure = store.getMeasure();
+                        }
+                    }
+                }
+
+                if (quantityPresent > 0) {
+                    SupportDishDto supportDishDto = new SupportDishDto();
+                    supportDishDto.setQuantityDoublePresent(quantityPresent);
+                    supportDishDto.setMeasure(measure);
+
+                    // Cache group information nếu cần thiết
+                    GroupEntity group = groupRepository.findById(groupId)
+                            .orElseThrow(() -> new EntityNotFoundException("Group not found with id: " + groupId));
+                    supportDishDto.setPositionName(group.getName());
+                    supportDishDtos.add(supportDishDto);
+                }
+            }
+        }
+    }
+
+    private void addPersonalFridgeSupport(Integer userId, Integer ingredientId, List<SupportDishDto> supportDishDtos) {
+        List<FridgeEntity> fridgeEntities = fridgeRepository.findByUserId(userId);
+
+        // Tìm personal fridge
+        Optional<FridgeEntity> personalFridge = fridgeEntities.stream()
+                .filter(fridge -> fridge.getGroupId() == null || fridge.getGroupId() == 0)
+                .findFirst();
+
+        if (personalFridge.isPresent()) {
+            List<FridgeIngredientsEntity> fridgeIngredients = fridgeIngredientsRepository
+                    .findByFridgeIdAndIngredientsId(personalFridge.get().getId(), ingredientId);
+
+            if (fridgeIngredients != null && !fridgeIngredients.isEmpty()) {
+                double quantityPresent = 0.0;
+                String measure = null;
+
+                for (FridgeIngredientsEntity fridgeIngredient : fridgeIngredients) {
+                    if (!isExpridedAt(fridgeIngredient.getExprided())) {
+                        quantityPresent += convertMeasureToQuantityResponse(fridgeIngredient.getMeasure(),
+                                fridgeIngredient.getQuantity().intValue());
+                        if (measure == null) {
+                            measure = fridgeIngredient.getMeasure();
+                        }
+                    }
+                }
+
+                if (quantityPresent > 0) {
+                    SupportDishDto supportDishDto = new SupportDishDto();
+                    supportDishDto.setQuantityDoublePresent(quantityPresent);
+                    supportDishDto.setMeasure(measure);
+                    supportDishDto.setPositionName("Tủ lạnh cá nhân");
+                    supportDishDtos.add(supportDishDto);
+                }
+            }
+        }
+    }
+
+    private void addGroupFridgeSupport(Set<Integer> groupIds, Integer ingredientId,
+            List<SupportDishDto> supportDishDtos) {
+        for (Integer groupId : groupIds) {
+            try {
+                FridgeEntity groupFridge = fridgeRepository.findByGroupId(groupId);
+                if (groupFridge == null)
+                    continue;
+
+                List<FridgeIngredientsEntity> fridgeIngredients = fridgeIngredientsRepository
+                        .findByFridgeIdAndIngredientsId(groupFridge.getId(), ingredientId);
+
+                if (fridgeIngredients != null && !fridgeIngredients.isEmpty()) {
+                    double quantityPresent = 0.0;
+                    String measure = null;
+
+                    for (FridgeIngredientsEntity fridgeIngredient : fridgeIngredients) {
+                        if (!isExpridedAt(fridgeIngredient.getExprided())) {
+                            quantityPresent += convertMeasureToQuantityResponse(fridgeIngredient.getMeasure(),
+                                    fridgeIngredient.getQuantity().intValue());
+                            if (measure == null) {
+                                measure = fridgeIngredient.getMeasure();
+                            }
+                        }
+                    }
+
+                    if (quantityPresent > 0) {
+                        SupportDishDto supportDishDto = new SupportDishDto();
+                        supportDishDto.setQuantityDoublePresent(quantityPresent);
+                        supportDishDto.setMeasure(measure);
+
+                        GroupEntity group = groupRepository.findById(groupId)
+                                .orElseThrow(() -> new EntityNotFoundException("Group not found with id: " + groupId));
+                        supportDishDto.setPositionName(group.getName());
+                        supportDishDtos.add(supportDishDto);
+                    }
+                }
+            } catch (Exception e) {
+                // Log lỗi và tiếp tục với group khác - có thể dùng System.out hoặc logger
+                // framework
+                System.err.println("Error processing group fridge for groupId: " + groupId + ", ingredientId: "
+                        + ingredientId + " - " + e.getMessage());
+                // Hoặc throw exception nếu muốn fail fast
+                // throw new RuntimeException("Error processing group fridge", e);
+            }
+        }
+    }
+
+    // Sử dụng hàm isExpridedAt có sẵn của bạn
+    // private boolean isExpridedAt(LocalDate expiredAt) {
+    // return expiredAt.isBefore(now());
+    // }
 
 }

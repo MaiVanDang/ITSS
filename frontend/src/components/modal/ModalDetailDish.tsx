@@ -6,6 +6,7 @@ import { userInfoProps, dishIngredients } from '../../utils/interface/Interface'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { userInfo } from '../../utils/userInfo';
+import React from 'react';
 
 interface ModalDetailMarketOrderProps {
     show: boolean;
@@ -51,13 +52,13 @@ function ModalDetailMarketOrder({
         if (show) {
             // Lưu vị trí cuộn hiện tại
             const scrollY = window.scrollY;
-            
+
             // Thêm style để ngăn cuộn
             document.body.style.position = 'fixed';
             document.body.style.top = `-${scrollY}px`;
             document.body.style.width = '100%';
             document.body.style.overflow = 'hidden';
-            
+
             return () => {
                 // Khôi phục khi modal đóng
                 document.body.style.position = '';
@@ -80,6 +81,7 @@ function ModalDetailMarketOrder({
             const response = await axios.get(Url(`dishs/show/detail/${dishId}/${userInfo?.id}`));
             setError(null);
             setIsLoading(false);
+            console.log(response);
             return response.data;
         } catch (error) {
             setError('Chưa lên công thức nào');
@@ -119,7 +121,7 @@ function ModalDetailMarketOrder({
 
     const renderOrderContent = () => {
         if (!dishDetail) return null;
-        
+
         return (
             <div style={{ height: '70vh', overflowY: 'auto' }}>
                 {/* Phần trên: Thông tin món ăn và công thức */}
@@ -142,7 +144,7 @@ function ModalDetailMarketOrder({
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Bên phải: Công thức nấu ăn */}
                         <div className="col-md-8">
                             <h4 className="text-primary mb-3">Công thức nấu ăn</h4>
@@ -172,75 +174,140 @@ function ModalDetailMarketOrder({
                                 <th>Ảnh</th>
                                 <th>Loại</th>
                                 <th>Mô tả</th>
-                                <th>Số lượng</th>
+                                <th>Số lượng cần</th>
                                 <th>Đơn vị tính</th>
-                                <th>Trạng thái</th>
+                                <th>Vị trí</th>
+                                <th>Số lượng hiện có</th>
                             </tr>
                         </thead>
                         <tbody>
                             {dishDetail.ingredients && dishDetail.ingredients.length > 0 ? (
-                                dishDetail.ingredients.map((ingredient, index) => (
-                                    <tr key={index}>
-                                        <td>{index + 1}</td>
-                                        <td><strong>{ingredient.ingredient.name}</strong></td>
-                                        <td>
-                                            <Image
-                                                src={ingredient.ingredient.image}
-                                                alt="ingredient"
-                                                style={{
-                                                    width: '4rem',
-                                                    height: '3rem',
-                                                    objectFit: 'cover',
-                                                }}
-                                                className="rounded"
-                                            />
-                                        </td>
-                                        <td className="text-center">
-                                            {ingredient.ingredient.ingredientStatus === 'INGREDIENT' ? (
-                                                <Badge pill bg="primary">
-                                                    Nguyên liệu
-                                                </Badge>
-                                            ) : ingredient.ingredient.ingredientStatus === 'FRESH_INGREDIENT' ? (
-                                                <Badge pill bg="success">
-                                                    Nguyên liệu tươi
-                                                </Badge>
-                                            ) : ingredient.ingredient.ingredientStatus === 'DRY_INGREDIENT' ? (
-                                                <Badge pill bg="secondary">
-                                                    Nguyên liệu khô
-                                                </Badge>
-                                            ) : ingredient.ingredient.ingredientStatus === 'SEASONING' ? (
-                                                <Badge pill bg="warning" className="text-dark">
-                                                    Gia vị nêm
-                                                </Badge>
-                                            ) : null}
-                                        </td>
-                                        <td>{ingredient.ingredient.description}</td>
-                                        <td className="text-center"><strong>{ingredient.quantity}</strong></td>
-                                        <td className="text-center">{ingredient.measure}</td>
-                                        <td className="text-center">
-                                            {ingredient.checkQuantity === 3 ? (
-                                                <Badge pill bg="success">
-                                                    Nguyên liệu có sẵn trong tủ lạnh và kho
-                                                </Badge>
-                                            ) : ingredient.checkQuantity === 2 ? (
-                                                <Badge pill bg="success">
-                                                    Nguyên liệu có sẵn trong tủ lạnh
-                                                </Badge>
-                                            ) : ingredient.checkQuantity === 1 ? (
-                                                <Badge pill bg="success">
-                                                    Nguyên liệu có sẵn trong kho
-                                                </Badge>
-                                            ) : (
-                                                <Badge pill bg="warning" className="text-dark">
-                                                    Nguyên liệu không có sẵn
-                                                </Badge>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
+                                dishDetail.ingredients.map((ingredient, index) => {
+                                    const supportData = ingredient.supportDishDto || [];
+                                    const hasMultiplePositions = supportData.length > 1;
+
+                                    // Always return a ReactNode from map
+                                    if (supportData.length > 0) {
+                                        return (
+                                            <React.Fragment key={`ingredient-${ingredient.ingredient.id}`}>
+                                                {supportData.map((support, supportIndex) => (
+                                                    <tr key={`${ingredient.ingredient.id}-${supportIndex}-${index}`}>
+                                                        {supportIndex === 0 ? (
+                                                            <>
+                                                                <td rowSpan={hasMultiplePositions ? supportData.length : undefined}>
+                                                                    {index + 1}
+                                                                </td>
+                                                                <td rowSpan={hasMultiplePositions ? supportData.length : undefined}>
+                                                                    <strong>{ingredient.ingredient.name}</strong>
+                                                                </td>
+                                                                <td rowSpan={hasMultiplePositions ? supportData.length : undefined}>
+                                                                    <Image
+                                                                        src={ingredient.ingredient.image}
+                                                                        alt="ingredient"
+                                                                        style={{
+                                                                            width: '4rem',
+                                                                            height: '3rem',
+                                                                            objectFit: 'cover',
+                                                                        }}
+                                                                        className="rounded"
+                                                                    />
+                                                                </td>
+                                                                <td rowSpan={hasMultiplePositions ? supportData.length : undefined} className="text-center">
+                                                                    {ingredient.ingredient.ingredientStatus === 'INGREDIENT' ? (
+                                                                        <Badge pill bg="primary">
+                                                                            Nguyên liệu
+                                                                        </Badge>
+                                                                    ) : ingredient.ingredient.ingredientStatus === 'FRESH_INGREDIENT' ? (
+                                                                        <Badge pill bg="success">
+                                                                            Nguyên liệu tươi
+                                                                        </Badge>
+                                                                    ) : ingredient.ingredient.ingredientStatus === 'DRY_INGREDIENT' ? (
+                                                                        <Badge pill bg="secondary">
+                                                                            Nguyên liệu khô
+                                                                        </Badge>
+                                                                    ) : ingredient.ingredient.ingredientStatus === 'SEASONING' ? (
+                                                                        <Badge pill bg="warning" className="text-dark">
+                                                                            Gia vị nêm
+                                                                        </Badge>
+                                                                    ) : null}
+                                                                </td>
+                                                                <td rowSpan={hasMultiplePositions ? supportData.length : undefined}>
+                                                                    {ingredient.ingredient.description}
+                                                                </td>
+                                                                <td rowSpan={hasMultiplePositions ? supportData.length : undefined} className="text-center">
+                                                                    <strong>{ingredient.quantity}</strong>
+                                                                </td>
+                                                                <td rowSpan={hasMultiplePositions ? supportData.length : undefined} className="text-center">
+                                                                    {ingredient.measure}
+                                                                </td>
+                                                            </>
+                                                        ) : null}
+                                                        <td className="text-center">
+                                                            <Badge pill bg="info">
+                                                                {support.positionName}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="text-center">
+                                                            <strong>{support.quantityDoublePresent}</strong> {support.measure}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </React.Fragment>
+                                        );
+                                    } else {
+                                        return (
+                                            <tr key={`ingredient-${ingredient.ingredient.id}-no-support`}>
+                                                <td>{index + 1}</td>
+                                                <td><strong>{ingredient.ingredient.name}</strong></td>
+                                                <td>
+                                                    <Image
+                                                        src={ingredient.ingredient.image}
+                                                        alt="ingredient"
+                                                        style={{
+                                                            width: '4rem',
+                                                            height: '3rem',
+                                                            objectFit: 'cover',
+                                                        }}
+                                                        className="rounded"
+                                                    />
+                                                </td>
+                                                <td className="text-center">
+                                                    {ingredient.ingredient.ingredientStatus === 'INGREDIENT' ? (
+                                                        <Badge pill bg="primary">
+                                                            Nguyên liệu
+                                                        </Badge>
+                                                    ) : ingredient.ingredient.ingredientStatus === 'FRESH_INGREDIENT' ? (
+                                                        <Badge pill bg="success">
+                                                            Nguyên liệu tươi
+                                                        </Badge>
+                                                    ) : ingredient.ingredient.ingredientStatus === 'DRY_INGREDIENT' ? (
+                                                        <Badge pill bg="secondary">
+                                                            Nguyên liệu khô
+                                                        </Badge>
+                                                    ) : ingredient.ingredient.ingredientStatus === 'SEASONING' ? (
+                                                        <Badge pill bg="warning" className="text-dark">
+                                                            Gia vị nêm
+                                                        </Badge>
+                                                    ) : null}
+                                                </td>
+                                                <td>{ingredient.ingredient.description}</td>
+                                                <td className="text-center"><strong>{ingredient.quantity}</strong></td>
+                                                <td className="text-center">{ingredient.measure}</td>
+                                                <td className="text-center">
+                                                    <Badge pill bg="secondary">
+                                                        Không có thông tin
+                                                    </Badge>
+                                                </td>
+                                                <td className="text-center">
+                                                    <span className="text-muted">Không có</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    }
+                                })
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="text-center py-3">
+                                    <td colSpan={9} className="text-center py-3">
                                         Không có nguyên liệu nào
                                     </td>
                                 </tr>
@@ -254,13 +321,13 @@ function ModalDetailMarketOrder({
 
     return (
         <div>
-            <Modal 
-                size="xl" 
-                show={show} 
+            <Modal
+                size="xl"
+                show={show}
                 onHide={hide}
                 backdrop="static"
                 keyboard={false}
-                style={{ 
+                style={{
                     position: 'fixed',
                     top: '50%',
                     left: '50%',
