@@ -771,47 +771,4 @@ public class ShoppingService {
         return null; // Không tìm thấy nhóm hợp lệ nào
     }
 
-    /**
-     * Lấy nhóm hợp lệ dựa trên leaderId và danh sách thành viên
-     * 
-     * @param leaderId   ID của leader
-     * @param listMember Danh sách ID thành viên
-     * @return GroupEntity hợp lệ hoặc null nếu không tìm thấy
-     */
-    private GroupEntity getValidGroup(Integer leaderId, List<Integer> listMember) {
-        if (leaderId == null) {
-            return null;
-        }
-
-        // Tìm nhóm theo leader
-        List<GroupEntity> groupEntities = groupRepository.findByLeader(leaderId);
-
-        for (GroupEntity groupEntity : groupEntities) {
-            // Lấy danh sách thành viên của nhóm
-            List<GroupMemberEntity> groupMemberEntities = groupMemberRepository.findByGroupId(groupEntity.getId());
-
-            // Chuyển đổi danh sách thành viên trong nhóm thành Set<Integer> để dễ so sánh
-            Set<Integer> groupMemberIds = groupMemberEntities.stream()
-                    .map(GroupMemberEntity::getUserId)
-                    .collect(Collectors.toSet());
-
-            // Thêm leader vào danh sách thành viên
-            groupMemberIds.add(leaderId);
-
-            // Kiểm tra xem tất cả thành viên trong listMember có thuộc nhóm này không
-            if (listMember != null && !listMember.isEmpty()) {
-                Set<Integer> inputMemberIds = new HashSet<>(listMember);
-
-                if (groupMemberIds.containsAll(inputMemberIds)) {
-                    return groupEntity; // Trả về nhóm hợp lệ
-                }
-            } else {
-                // Nếu listMember null hoặc rỗng, trả về nhóm đầu tiên
-                return groupEntity;
-            }
-        }
-
-        return null; // Không tìm thấy nhóm hợp lệ
-    }
-
 }

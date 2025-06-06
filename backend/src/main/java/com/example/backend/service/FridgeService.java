@@ -121,15 +121,19 @@ public class FridgeService {
         // Chuyển đổi đơn vị đo lường
         Integer quantity = convertMeasureToQuantity(unit, quantityDouble);
         // Kiểm tra số lượng có đủ không
+
+        System.out.println("Quantity: " + entity.getQuantity() + " " + quantity);
         if (entity.getQuantity() < quantity) {
             throw new NotCanDoException("Số lượng nguyên liệu không đủ");
         }
         // Cập nhật số lượng
-        if (entity.getQuantity() - quantity == 0) {
+        if (entity.getQuantity() - quantity <= 0) {
             fridgeIngredientsRepository.delete(entity);
+        } else {
+            entity.setQuantity(entity.getQuantity() - quantity);
+            fridgeIngredientsRepository.save(entity);
         }
-        entity.setQuantity(entity.getQuantity() - quantity);
-        fridgeIngredientsRepository.save(entity);
+
     }
 
     public void deleteFridge(Integer id) {
