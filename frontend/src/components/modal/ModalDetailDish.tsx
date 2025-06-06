@@ -243,9 +243,15 @@ function ModalDetailMarketOrder({
                                                             </>
                                                         ) : null}
                                                         <td className="text-center">
-                                                            <Badge pill bg="info">
-                                                                {support.positionName}
-                                                            </Badge>
+                                                            {support.positionName == "Kho cá nhân" || support.positionName == "Tủ lạnh cá nhân" ? (
+                                                                <Badge pill bg="info">
+                                                                    {support.positionName}
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge pill bg="info">
+                                                                    {"Nhóm " + support.positionName}
+                                                                </Badge>
+                                                            )}
                                                         </td>
                                                         <td className="text-center">
                                                             <strong>{support.quantityDoublePresent}</strong> {support.measure}
