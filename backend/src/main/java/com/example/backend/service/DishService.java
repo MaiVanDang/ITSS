@@ -496,7 +496,7 @@ public class DishService {
 
             // Nếu nhóm đủ số lượng thì trả về 1
             if (totalGroupQuantity >= requiredQuantity) {
-                return 1;
+                return 2;
             }
 
             // Nếu nhóm thiếu, cộng thêm số lượng cá nhân
@@ -504,7 +504,7 @@ public class DishService {
                     getPersonalFridgeQuantity(userId, ingredientId);
 
             if (totalGroupQuantity + totalPersonalQuantity >= requiredQuantity) {
-                return 1;
+                return 2;
             }
         }
 

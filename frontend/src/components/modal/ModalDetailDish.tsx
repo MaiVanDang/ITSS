@@ -12,13 +12,11 @@ interface ModalDetailMarketOrderProps {
     show: boolean;
     hide: () => void;
     dishId: number;
-    leaderId?: number;
-    listMember?: userInfoProps[];
-    fridgeId?: number;
-    onCreateOrder?: () => void;
+    isReadyToCook?: boolean;
+    isGroupCooking?: boolean;
+    selectedGroupName?: string;
 }
 
-// Interface cho dữ liệu món ăn chi tiết
 interface DishDetail {
     id: number;
     name: string;
@@ -36,10 +34,9 @@ function ModalDetailMarketOrder({
     show,
     hide,
     dishId,
-    leaderId,
-    listMember,
-    fridgeId,
-    onCreateOrder,
+    isReadyToCook = false,
+    isGroupCooking = false,
+    selectedGroupName = '',
 }: ModalDetailMarketOrderProps) {
     const [reload, setReload] = useState(0);
     const [dishDetail, setDishDetail] = useState<DishDetail | null>(null);
@@ -47,20 +44,15 @@ function ModalDetailMarketOrder({
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Ngăn cuộn khi modal mở
     useEffect(() => {
         if (show) {
-            // Lưu vị trí cuộn hiện tại
             const scrollY = window.scrollY;
-
-            // Thêm style để ngăn cuộn
             document.body.style.position = 'fixed';
             document.body.style.top = `-${scrollY}px`;
             document.body.style.width = '100%';
             document.body.style.overflow = 'hidden';
 
             return () => {
-                // Khôi phục khi modal đóng
                 document.body.style.position = '';
                 document.body.style.top = '';
                 document.body.style.width = '';
@@ -75,13 +67,11 @@ function ModalDetailMarketOrder({
             setIsLoading(false);
             return null;
         }
-        console.log('Fetching order details for index:', dishId);
         try {
             setIsLoading(true);
             const response = await axios.get(Url(`dishs/show/detail/${dishId}/${userInfo?.id}`));
             setError(null);
             setIsLoading(false);
-            console.log(response);
             return response.data;
         } catch (error) {
             setError('Chưa lên công thức nào');
@@ -102,6 +92,45 @@ function ModalDetailMarketOrder({
         fetchData();
     }, [show, reload, dishId]);
 
+    const filterIngredients = (ingredients: dishIngredients[]) => {
+    if (!isReadyToCook) return ingredients;
+    
+    return ingredients.map(ingredient => {
+        if (!ingredient.supportDishDto) return ingredient;
+        
+        const filteredSupport = ingredient.supportDishDto.filter(support => {
+            if (isGroupCooking && selectedGroupName) {
+                // NẤU ĂN NHÓM: Hiển thị cả nguyên liệu từ nhóm + cá nhân
+                const positionName = support.positionName;
+                
+                // Kiểm tra nguyên liệu từ nhóm được chọn - SỬA LẠI LOGIC
+                const isTargetGroup = 
+                    positionName === selectedGroupName ||
+                    positionName === `Nhóm ${selectedGroupName}` ||
+                    positionName.toLowerCase().includes(selectedGroupName.toLowerCase());
+                
+                // Kiểm tra nguyên liệu từ kho cá nhân
+                const isPersonal = positionName === "Kho cá nhân" || 
+                    positionName === "Tủ lạnh cá nhân";
+                
+                return (isTargetGroup || isPersonal) && support.quantityDoublePresent > 0;
+            } else {
+                // NẤU ĂN CÁ NHÂN: Chỉ hiển thị nguyên liệu cá nhân
+                return (
+                    (support.positionName === "Kho cá nhân" || 
+                     support.positionName === "Tủ lạnh cá nhân") &&
+                    support.quantityDoublePresent > 0
+                );
+            }
+        });
+        
+        return {
+            ...ingredient,
+            supportDishDto: filteredSupport.length > 0 ? filteredSupport : null
+        };
+    });
+};
+
     const renderNoOrderContent = () => {
         return (
             <div className="text-center py-5">
@@ -110,11 +139,6 @@ function ModalDetailMarketOrder({
                 </div>
                 <h4>Không tìm thấy thông tin món ăn</h4>
                 <p className="text-muted">{error || "Dữ liệu không tồn tại"}</p>
-                {onCreateOrder && (
-                    <Button variant="primary" onClick={onCreateOrder} className="mt-3">
-                        Tạo đơn hàng mới
-                    </Button>
-                )}
             </div>
         );
     };
@@ -122,12 +146,12 @@ function ModalDetailMarketOrder({
     const renderOrderContent = () => {
         if (!dishDetail) return null;
 
+        const filteredIngredients = filterIngredients(dishDetail.ingredients || []);
+
         return (
             <div style={{ height: '70vh', overflowY: 'auto' }}>
-                {/* Phần trên: Thông tin món ăn và công thức */}
                 <div className="mb-4">
                     <div className="row">
-                        {/* Bên trái: Ảnh và thông tin cơ bản */}
                         <div className="col-md-4">
                             <Image
                                 src={dishDetail.image}
@@ -145,7 +169,6 @@ function ModalDetailMarketOrder({
                             </div>
                         </div>
 
-                        {/* Bên phải: Công thức nấu ăn */}
                         <div className="col-md-8">
                             <h4 className="text-primary mb-3">Công thức nấu ăn</h4>
                             <div className="border rounded p-3 bg-light" style={{ height: '300px', overflowY: 'auto' }}>
@@ -163,7 +186,6 @@ function ModalDetailMarketOrder({
                     </div>
                 </div>
 
-                {/* Phần dưới: Bảng nguyên liệu */}
                 <div className="mt-4">
                     <h4 className="text-primary mb-3">Nguyên liệu</h4>
                     <Table bordered>
@@ -181,12 +203,11 @@ function ModalDetailMarketOrder({
                             </tr>
                         </thead>
                         <tbody>
-                            {dishDetail.ingredients && dishDetail.ingredients.length > 0 ? (
-                                dishDetail.ingredients.map((ingredient, index) => {
+                            {filteredIngredients.length > 0 ? (
+                                filteredIngredients.map((ingredient, index) => {
                                     const supportData = ingredient.supportDishDto || [];
                                     const hasMultiplePositions = supportData.length > 1;
 
-                                    // Always return a ReactNode from map
                                     if (supportData.length > 0) {
                                         return (
                                             <React.Fragment key={`ingredient-${ingredient.ingredient.id}`}>
@@ -243,7 +264,7 @@ function ModalDetailMarketOrder({
                                                             </>
                                                         ) : null}
                                                         <td className="text-center">
-                                                            {support.positionName == "Kho cá nhân" || support.positionName == "Tủ lạnh cá nhân" ? (
+                                                            {support.positionName === "Kho cá nhân" || support.positionName === "Tủ lạnh cá nhân" ? (
                                                                 <Badge pill bg="info">
                                                                     {support.positionName}
                                                                 </Badge>
@@ -364,7 +385,6 @@ function ModalDetailMarketOrder({
                 </Modal.Footer>
             </Modal>
 
-            {/* Toast thêm vào tủ lạnh thành công */}
             <Toast
                 onClose={() => setShowToast(false)}
                 show={showToast}

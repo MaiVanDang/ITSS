@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import { faHeart as noHeart } from '@fortawesome/free-regular-svg-icons';
 import { userInfo } from '../../utils/userInfo';
 import './Cook.css';
+import { convertToBaseUnit } from "../../utils/convertUnit";
 
 function Cook() {
     const dispatch = useDispatch();
@@ -29,8 +30,13 @@ function Cook() {
     const [currentDish, setCurrentDish] = useState<dishsProps>({} as dishsProps);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showModal, setShowModal] = useState(false);
+    const [selectedDishId, setSelectedDishId] = useState<number>(0);
 
-    // Toast state
+    const [isReadyToCook, setIsReadyToCook] = useState(false);
+    const [isGroupCooking, setIsGroupCooking] = useState(false);
+    const [selectedGroupName, setSelectedGroupName] = useState('');
+
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('warning');
@@ -83,14 +89,12 @@ function Cook() {
         }
     };
 
-    // Hàm hiển thị toast
     const showToastMessage = (type: string, message: string) => {
         setToastType(type);
         setToastMessage(message);
         setShowToast(true);
     };
 
-    // Hàm kiểm tra nguyên liệu cho tất cả món ăn
     const checkAllDishesIngredients = async () => {
         try {
             const results = await Promise.all(
@@ -112,12 +116,83 @@ function Cook() {
         }
     };
 
-    // Tự động gọi khi component mount và khi listDishs thay đổi
     useEffect(() => {
         if (listDishs.length > 0) {
             checkAllDishesIngredients();
         }
     }, [listDishs]);
+
+    const checkIngredientsStatus = (dishId: number) => {
+        const dishData = ingredientsList[dishId];
+        if (!dishData || !dishData.ingredients || dishData.ingredients.length === 0) {
+            return 'no-ingredients';
+        }
+
+        const checkQuantities = getCheckQuantities(dishId);
+        const allReady = checkQuantities.every((quantity: number) => quantity > 0);
+        return allReady ? 'ready' : 'not-ready';
+    };
+
+    const getCheckQuantities = (dishId: number) => {
+    const dishData = ingredientsList[dishId];
+    if (!dishData || !dishData.ingredients || dishData.ingredients.length === 0) {
+        return [];
+    }
+
+    return dishData.ingredients.map((item: any) => {
+        const required = convertToBaseUnit(item.measure, item.quantity);
+
+        if (!item.supportDishDto || item.supportDishDto.length === 0) return 0;
+
+        let total = 0;
+
+        item.supportDishDto.forEach((support: any) => {
+            const positionName = support.positionName;
+
+            const isTargetGroup =
+                isGroupCooking && selectedGroupName &&
+                (positionName === selectedGroupName ||
+                    positionName === `Nhóm ${selectedGroupName}` ||
+                    positionName.toLowerCase().includes(selectedGroupName.toLowerCase()));
+
+            const isPersonal = positionName === "Kho cá nhân" || positionName === "Tủ lạnh cá nhân";
+
+            if ((isGroupCooking && (isTargetGroup || isPersonal)) || (!isGroupCooking && isPersonal)) {
+                total += convertToBaseUnit(support.measure, support.quantityDoublePresent);
+            }
+        });
+
+        return total >= required ? 1 : 0;
+    });
+};
+    const checkRecipeStatus = (dishId: number) => {
+        const dishData = ingredientsList[dishId];
+        if (!dishData) return 'missing-both';
+
+        const hasIngredients = dishData.ingredients && dishData.ingredients.length > 0;
+        const hasRecipe = dishData.recipeDes && dishData.recipeDes.trim() !== '';
+
+        if (hasIngredients && hasRecipe) return 'complete';
+        if (!hasIngredients && !hasRecipe) return 'missing-both';
+        if (!hasIngredients) return 'missing-ingredients';
+        return 'missing-recipe';
+    };
+
+    const handleFilterContextChange = (readyToCook: boolean, groupCooking: boolean, groupName: string) => {
+        setIsReadyToCook(readyToCook);
+        setIsGroupCooking(groupCooking);
+        setSelectedGroupName(groupName);
+    };
+
+    const handleShowModal = (dishId: number) => {
+        setSelectedDishId(dishId);
+        setShowModal(true);
+    };
+
+    const handleHideModal = () => {
+        setShowModal(false);
+        setSelectedDishId(0);
+    };
 
     const renderLoading = () => (
         <div className="text-center py-5">
@@ -151,42 +226,8 @@ function Cook() {
         </div>
     );
 
-    const checkIngredientsStatus = (dishId : number) => {
-        const dishData = ingredientsList[dishId];
-        if (!dishData || !dishData.ingredients || dishData.ingredients.length === 0) {
-            return 'no-ingredients'; // Chưa có nguyên liệu
-        }
-
-        const checkQuantities = getCheckQuantities(dishId);
-        const allReady = checkQuantities.every((quantity: number) => quantity > 0);
-        return allReady ? 'ready' : 'not-ready'; // Sẵn sàng hoặc chưa sẵn sàng
-    };
-
-    const getCheckQuantities = (dishId: number) => {
-        const dishData = ingredientsList[dishId];
-        if (!dishData || !dishData.ingredients || dishData.ingredients.length === 0) {
-            return [];
-        }
-        
-        return dishData.ingredients.map((item: any) => item.checkQuantity);
-    };
-
-    const checkRecipeStatus = (dishId: number) => {
-        const dishData = ingredientsList[dishId];
-        if (!dishData) return 'missing-both';
-
-        const hasIngredients = dishData.ingredients && dishData.ingredients.length > 0;
-        const hasRecipe = dishData.recipeDes && dishData.recipeDes.trim() !== '';
-
-        if (hasIngredients && hasRecipe) return 'complete';
-        if (!hasIngredients && !hasRecipe) return 'missing-both';
-        if (!hasIngredients) return 'missing-ingredients';
-        return 'missing-recipe';
-    };
-
     return (
         <div className="store-container">
-            {/* Header giống Market */}
             <div className="store-header d-flex justify-content-between align-items-center">
                 <h2>
                     <FontAwesomeIcon icon={faUtensils} className="me-2" />
@@ -210,12 +251,10 @@ function Cook() {
                 </div>
             </div>
 
-            {/* Search */}
             <div className="mb-3 bg-white p-3 rounded shadow-sm">
-                <Search />
+                <Search onFilterContextChange={handleFilterContextChange} />
             </div>
 
-            {/* Bảng dữ liệu giống Market */}
             <div className="bg-white rounded shadow-sm overflow-hidden">
                 {isLoading ? (
                     renderLoading()
@@ -291,8 +330,8 @@ function Cook() {
                                                 <Button
                                                     variant="link"
                                                     onClick={() => {
-                                                        setCurrentDish(dish);
-                                                        setShowModalDeleteDish(true);
+                                                        setIndexCurrentDish(dish.id);
+                                                        setShowModalDetailDish(true);
                                                     }}
                                                     className="text-danger p-0"
                                                 >
@@ -331,7 +370,6 @@ function Cook() {
                 )}
             </div>
 
-            {/* Modals */}
             <ModalDeleteDish
                 show={showModalDeleteDish}
                 hide={() => setShowModalDeleteDish(false)}
@@ -347,15 +385,14 @@ function Cook() {
             {indexCurrentDish && (
                 <ModalDetailDish
                     show={showModalDetailDish}
-                    hide={() => {
-                        setShowModalDetailDish(false);
-                        setIndexCurrentDish(null);
-                    }}
-                    dishId={indexCurrentDish}
+                    hide={() => setShowModalDetailDish(false)}
+                    dishId={indexCurrentDish || 0}
+                    isReadyToCook={isReadyToCook}
+                    isGroupCooking={isGroupCooking}
+                    selectedGroupName={selectedGroupName}
                 />
             )}
 
-            {/* Toast */}
             <Toast
                 onClose={() => setShowToast(false)}
                 show={showToast}
