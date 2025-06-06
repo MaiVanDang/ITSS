@@ -121,8 +121,6 @@ public class FridgeService {
         // Chuyển đổi đơn vị đo lường
         Integer quantity = convertMeasureToQuantity(unit, quantityDouble);
         // Kiểm tra số lượng có đủ không
-
-        System.out.println("Quantity: " + entity.getQuantity() + " " + quantity);
         if (entity.getQuantity() < quantity) {
             throw new NotCanDoException("Số lượng nguyên liệu không đủ");
         }

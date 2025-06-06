@@ -7,6 +7,7 @@ import com.example.backend.entities.DishEntity;
 import com.example.backend.entities.DishIngredientsEntity;
 import com.example.backend.entities.FridgeEntity;
 import com.example.backend.entities.FridgeIngredientsEntity;
+import com.example.backend.entities.GroupMemberEntity;
 import com.example.backend.entities.IngredientsEntity;
 import com.example.backend.entities.StoreEntity;
 import com.example.backend.exception.DuplicateException;
@@ -32,6 +33,7 @@ public class DishService {
     private final StoreRepository storeRepository;
     private final FridgeRepository fridgeRepository;
     private final FridgeIngredientsRepository fridgeIngredientsRepository;
+    private final GroupMemberRepository groupMemberRepository;
 
     public List<DishDto> getAllDishes(Integer userId) {
         List<DishDto> dtos = new ArrayList<DishDto>();
@@ -186,13 +188,13 @@ public class DishService {
         int chekck = 0;
         boolean isStore = false;
         boolean isFridge = false;
+        quantity = convertMeasureToQuantity(measure, quantity);
         // Kiểm tra trong nhà kho theo cá nhân
         List<StoreEntity> storeEntity = storeRepository.findByUserIdAndIngredientId(userId, ingredientId);
         if (storeEntity != null && !storeEntity.isEmpty()) {
             for (StoreEntity store : storeEntity) {
                 // Chuyển đổi đơn vị đo lường nếu cần
                 int convertedQuantity = convertMeasureToQuantity(store.getMeasure(), store.getQuantity().intValue());
-                quantity = convertMeasureToQuantity(measure, quantity);
                 if (convertedQuantity >= quantity && !isExpridedAt(store.getExpridedAt())) {
                     // Nếu số lượng trong kho đủ và chưa hết hạn
                     isStore = true; // Tồn tại đủ số lượng trong kho
@@ -201,6 +203,7 @@ public class DishService {
             }
         }
 
+        // Kiểm tra tủ lạnh theo cá nhân
         List<FridgeEntity> fridgeEntity = fridgeRepository.findByUserId(userId);
         int newFridgeId = 0;
         for (FridgeEntity fridge : fridgeEntity) {
@@ -216,7 +219,6 @@ public class DishService {
                 // Chuyển đổi đơn vị đo lường nếu cần
                 int convertedQuantity = convertMeasureToQuantity(fridgeIngredient.getMeasure(),
                         fridgeIngredient.getQuantity());
-                quantity = convertMeasureToQuantity(measure, quantity);
                 if (convertedQuantity >= quantity && !isExpridedAt(fridgeIngredient.getExprided())) {
                     // Nếu số lượng trong tủ lạnh đủ và chưa hết hạn
                     isFridge = true; // Tồn tại đủ số lượng trong tủ lạnh
@@ -224,6 +226,47 @@ public class DishService {
                 }
             }
         }
+
+        // Theo group
+        // Lay id nhom
+        List<GroupMemberEntity> groupMemberEntities = groupMemberRepository.findByUserId(userId);
+        if (groupMemberEntities != null) {
+            for (GroupMemberEntity groupMemberEntity : groupMemberEntities) {
+                int groupId = groupMemberEntity.getGroupId();
+                // check store
+                storeEntity = storeRepository.findByGroupId(groupId);
+                if (storeEntity != null && !storeEntity.isEmpty()) {
+                    for (StoreEntity store : storeEntity) {
+                        // Chuyển đổi đơn vị đo lường nếu cần
+                        int convertedQuantity = convertMeasureToQuantity(store.getMeasure(),
+                                store.getQuantity().intValue());
+                        if (convertedQuantity >= quantity && !isExpridedAt(store.getExpridedAt())) {
+                            // Nếu số lượng trong kho đủ và chưa hết hạn
+                            isStore = true; // Tồn tại đủ số lượng trong kho
+                            break;
+                        }
+                    }
+                }
+
+                // check fridge
+                newFridgeId = fridgeRepository.findByGroupId(groupId).getId();
+                fridgeIngredients = fridgeIngredientsRepository
+                        .findByFridgeIdAndIngredientsId(newFridgeId, ingredientId);
+                if (fridgeIngredients != null && !fridgeIngredients.isEmpty()) {
+                    for (FridgeIngredientsEntity fridgeIngredient : fridgeIngredients) {
+                        // Chuyển đổi đơn vị đo lường nếu cần
+                        int convertedQuantity = convertMeasureToQuantity(fridgeIngredient.getMeasure(),
+                                fridgeIngredient.getQuantity());
+                        if (convertedQuantity >= quantity && !isExpridedAt(fridgeIngredient.getExprided())) {
+                            // Nếu số lượng trong tủ lạnh đủ và chưa hết hạn
+                            isFridge = true; // Tồn tại đủ số lượng trong tủ lạnh
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         // Nếu tồn tại ở cả 2 nơi theo cá nhân
         if (isStore && isFridge) {
             chekck = 3; // Tồn tại đủ số lượng trong cả kho và tủ lạnh
