@@ -262,10 +262,6 @@ npm test
 # Backend Coverage
 ./mvnw jacoco:report
 
-# Frontend Coverage
-npm run test:coverage
-```
-
 ### 🌐 **Integration Tests**
 ```bash
 ./mvnw test -Dtest=*IntegrationTest
