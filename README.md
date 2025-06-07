@@ -252,10 +252,6 @@ docker-compose up -d
 cd backend
 ./mvnw test
 
-# Frontend Tests
-cd frontend
-npm test
-```
 
 ### 📊 **Kiểm Tra Coverage**
 ```bash
